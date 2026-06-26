@@ -1,0 +1,30 @@
+{{define "client_mail_preview"}}
+<div class="flex items-center justify-between mb-4">
+    <h3 class="text-lg font-semibold text-gray-900">Mail senden: {{.Client.Name}}</h3>
+    <button onclick="closeSendMailModal()" class="text-gray-400 hover:text-gray-600 transition"><i class="fas fa-times text-lg"></i></button>
+</div>
+{{if .UnbilledCount}}
+<div class="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-lg mb-4 text-sm">
+    <strong>{{.UnbilledCount}} unbezahlte Einträge</strong> mit <strong>{{formatHours .UnbilledHours}}</strong>
+</div>
+<div class="text-sm text-gray-600 mb-4 space-y-1">
+    <p><strong>Empfänger:</strong> {{.Recipients}}</p>
+    <p class="text-xs text-gray-400 mt-2 whitespace-pre-wrap">{{.MailText}}</p>
+</div>
+<form id="clientMailForm" class="space-y-4">
+    <div class="flex items-center">
+        <input type="checkbox" id="mark_billed" name="mark_billed" value="1" checked class="h-4 w-4 text-primaryLight focus:ring-primaryLight border-gray-300 rounded">
+        <label for="mark_billed" class="ml-2 text-sm text-gray-700">Einträge als abgerechnet markieren</label>
+    </div>
+    <div class="flex justify-end space-x-3 pt-2">
+        <button type="button" onclick="closeSendMailModal()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition">Abbrechen</button>
+        <button type="button" onclick="submitClientMail({{.Client.ID}})" class="px-4 py-2 text-sm font-medium text-white bg-primaryLight hover:bg-primary rounded-lg transition shadow-sm">
+            <i class="fas fa-paper-plane mr-1.5"></i> Senden
+        </button>
+    </div>
+</form>
+{{else}}
+<p class="text-sm text-gray-500">Keine unbezahlten Einträge für diesen Auftraggeber.</p>
+<div class="flex justify-end pt-4"><button type="button" onclick="closeSendMailModal()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition">Schließen</button></div>
+{{end}}
+{{end}}

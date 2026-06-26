@@ -1,0 +1,460 @@
+{{define "head"}}<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.Title}} - Stundenerfassung</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#1e40af',
+                        primaryLight: '#3b82f6',
+                        accent: '#f59e0b',
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        [x-cloak] { display: none !important; }
+        .htmx-indicator { display: none; }
+        .htmx-request .htmx-indicator { display: inline-block; }
+        .htmx-request.htmx-indicator { display: inline-block; }
+        .fade-in { animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .toast { animation: slideIn 0.3s ease-out; }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(100%); } to { opacity: 1; transform: translateX(0); } }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen" hx-ext="response-targets">
+{{template "nav" .}}
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+{{end}}
+
+{{define "nav"}}
+<nav class="bg-white border-b border-gray-200 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between h-16">
+            <div class="flex items-center">
+                <a href="/dashboard" class="flex items-center space-x-2">
+                    <i class="fas fa-clock text-primaryLight text-xl"></i>
+                    <span class="text-xl font-bold text-gray-900">{{headerTitle}}</span>
+                </a>
+            </div>
+            {{if .User}}
+            <div class="flex items-center space-x-2">
+                <a href="#" onclick="openExportModal(); return false;" class="text-gray-500 hover:text-primaryLight transition px-3 py-2 text-sm font-medium">
+                    <i class="fas fa-file-pdf mr-1"></i> Export
+                </a>
+                <a href="/stats" class="text-gray-500 hover:text-primaryLight transition px-3 py-2 text-sm font-medium">
+                    <i class="fas fa-chart-bar mr-1"></i> Statistiken
+                </a>
+                <a href="/log" class="text-gray-500 hover:text-primaryLight transition px-3 py-2 text-sm font-medium">
+                    <i class="fas fa-history mr-1"></i> Log
+                </a>
+                <a href="/clients" class="text-gray-500 hover:text-primaryLight transition px-3 py-2 text-sm font-medium">
+                    <i class="fas fa-building mr-1"></i> Auftraggeber
+                </a>
+                <div class="relative ml-2" x-data="{open: false}" @click.outside="open = false">
+                    <button @click="open = !open" class="flex items-center space-x-2 text-sm text-gray-600 hover:text-gray-900 transition px-2 py-1 rounded-lg hover:bg-gray-100">
+                        <div class="w-8 h-8 bg-primaryLight text-white rounded-full flex items-center justify-center font-medium text-xs">
+                            {{slice .User.Username 0 1 | upper}}
+                        </div>
+                        <span class="font-medium hidden sm:inline">{{.User.Username}}</span>
+                        <i class="fas fa-chevron-down text-xs text-gray-400"></i>
+                    </button>
+                    <div x-show="open" x-cloak class="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                        <a href="/profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition">
+                            <i class="fas fa-user mr-2 text-gray-400"></i> Profil
+                        </a>
+                        <a href="/settings" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition">
+                            <i class="fas fa-cog mr-2 text-gray-400"></i> Einstellungen
+                        </a>
+                        <a href="/mail-settings" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition">
+                            <i class="fas fa-envelope mr-2 text-gray-400"></i> Mail
+                        </a>
+                        {{if .User.IsAdmin}}
+                        <a href="/admin/settings" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition">
+                            <i class="fas fa-sliders-h mr-2 text-gray-400"></i> Admin-Einstellungen
+                        </a>
+                        {{end}}
+                        <a href="/logout" class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition">
+                            <i class="fas fa-sign-out-alt mr-2"></i> Abmelden
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {{end}}
+        </div>
+    </div>
+</nav>
+{{end}}
+
+{{define "foot"}}
+</main>
+<footer class="border-t border-gray-200 bg-white mt-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <p class="text-center text-sm text-gray-400">{{footerText}}</p>
+    </div>
+</footer>
+
+<div id="tracking-bar" class="hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-300 shadow-lg z-40 px-4 py-3">
+    <div class="max-w-7xl mx-auto flex items-center gap-4">
+        <div class="flex items-center gap-3">
+            <span id="tracking-timer" class="text-2xl font-mono font-bold text-gray-900 tabular-nums">00:00:00</span>
+            <span id="tracking-status" class="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-medium">Läuft</span>
+        </div>
+        <button id="tracking-pause-btn" onclick="togglePause()"
+            class="px-3 py-1.5 text-sm font-medium bg-amber-100 text-amber-700 rounded-lg hover:bg-amber-200 transition">
+            <i class="fas fa-pause mr-1"></i> Pause
+        </button>
+        <select id="tracking-client" class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primaryLight outline-none">
+            <option value="">-- Auftraggeber --</option>
+        </select>
+        <input type="text" id="tracking-purpose" placeholder="Beschreibung..."
+            class="flex-1 px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primaryLight outline-none">
+        <button onclick="finishTracking()"
+            class="px-4 py-1.5 text-sm font-medium bg-primaryLight hover:bg-primary text-white rounded-lg transition shadow-sm whitespace-nowrap">
+            <i class="fas fa-check mr-1"></i> Abschließen
+        </button>
+        <button onclick="cancelTracking()"
+            class="px-3 py-1.5 text-sm font-medium text-gray-400 hover:text-red-500 transition">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+</div>
+
+<div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
+
+<div id="exportModal" class="hidden fixed inset-0 z-50 overflow-y-auto">
+    <div class="flex items-center justify-center min-h-screen px-4">
+        <div class="fixed inset-0 bg-gray-900/50" onclick="document.getElementById('exportModal').classList.add('hidden')"></div>
+        <div class="relative bg-white rounded-2xl shadow-xl max-w-sm w-full p-6" onclick="event.stopPropagation()">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-900">Export</h3>
+                <button onclick="document.getElementById('exportModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600 transition">
+                    <i class="fas fa-times text-lg"></i>
+                </button>
+            </div>
+            <form id="exportForm" method="GET" action="/export" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Zeitraum</label>
+                    <select name="range" id="export-range" onchange="toggleExportCustomRange()" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primaryLight outline-none">
+                        <option value="all">Gesamt</option>
+                        <option value="1m">Letzter Monat</option>
+                        <option value="3m">Letzten 3 Monate</option>
+                        <option value="6m">Letzten 6 Monate</option>
+                        <option value="1y">Letztes Jahr</option>
+                        <option value="custom">Benutzerdefiniert</option>
+                    </select>
+                </div>
+                <div id="export-custom-range" class="hidden space-y-3">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">Von</label>
+                            <input type="date" name="from" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primaryLight outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">Bis</label>
+                            <input type="date" name="to" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primaryLight outline-none">
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                    <select name="status" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primaryLight outline-none">
+                        <option value="unbilled">Nur offene (nicht abgerechnet)</option>
+                        <option value="all">Alle Einträge</option>
+                        <option value="billed">Nur abgerechnete</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Auftraggeber</label>
+                    <select name="client" id="export-client" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primaryLight outline-none">
+                        <option value="all">Alle Auftraggeber</option>
+                    </select>
+                </div>
+                <div class="flex justify-end space-x-3 pt-2">
+                    <button type="button" onclick="document.getElementById('exportModal').classList.add('hidden')"
+                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition">Abbrechen</button>
+                    <button type="submit"
+                        class="px-4 py-2 text-sm font-medium text-white bg-primaryLight hover:bg-primary rounded-lg transition shadow-sm">
+                        <i class="fas fa-download mr-1.5"></i> Exportieren
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleExportCustomRange() {
+    var v = document.getElementById('export-range').value;
+    document.getElementById('export-custom-range').classList.toggle('hidden', v !== 'custom');
+}
+function populateExportClients() {
+    var sel = document.getElementById('export-client');
+    if (!sel || sel.options.length > 1) return;
+    var src = document.querySelector('#global-filter select[name=client]');
+    if (!src) src = document.querySelector('select[name=client_filter]');
+    if (src) {
+        for (var i = 0; i < src.options.length; i++) {
+            var opt = document.createElement('option');
+            opt.value = src.options[i].value;
+            opt.textContent = src.options[i].textContent;
+            sel.appendChild(opt);
+        }
+    }
+}
+function syncExportFromFilter() {
+    var gf = document.getElementById('global-filter');
+    if (!gf) return;
+    var fr = gf.querySelector('select[name=range]');
+    var fc = gf.querySelector('select[name=client]');
+    var ff = gf.querySelector('input[name=from]');
+    var ft = gf.querySelector('input[name=to]');
+    if (fr) document.getElementById('export-range').value = fr.value;
+    if (fc) document.getElementById('export-client').value = fc.value;
+    if (ff) document.querySelector('#exportModal input[name=from]').value = ff.value;
+    if (ft) document.querySelector('#exportModal input[name=to]').value = ft.value;
+    toggleExportCustomRange();
+}
+function openExportModal() {
+    populateExportClients();
+    syncExportFromFilter();
+    document.getElementById('exportModal').classList.remove('hidden');
+}
+</script>
+<script>
+    // CSRF token
+    function getCSRFToken() { var m = document.cookie.match(/csrf_token=([^;]+)/); return m ? m[1] : ''; }
+    document.addEventListener('DOMContentLoaded', function() {
+        var t = getCSRFToken(); if (!t) return;
+        document.querySelectorAll('form').forEach(function(f) {
+            if (!f.querySelector('input[name=csrf_token]')) { var i = document.createElement('input'); i.type = 'hidden'; i.name = 'csrf_token'; i.value = t; f.appendChild(i); }
+        });
+    });
+    document.body.addEventListener('htmx:configRequest', function(evt) { evt.detail.headers['X-CSRF-Token'] = getCSRFToken(); });
+    function injectCSRFToken(container) {
+        var t = getCSRFToken();
+        if (t) {
+            container.querySelectorAll('form').forEach(function(f) {
+                if (!f.querySelector('input[name=csrf_token]')) {
+                    var i = document.createElement('input');
+                    i.type = 'hidden'; i.name = 'csrf_token'; i.value = t;
+                    f.appendChild(i);
+                }
+            });
+        }
+    }
+</script>
+<script>
+    document.body.addEventListener('htmx:afterRequest', function(evt) {
+        if (evt.detail.xhr && evt.detail.xhr.status === 401) {
+            window.location.href = '/login';
+        }
+    });
+    document.body.addEventListener('showToast', function(evt) {
+        var toast = document.createElement('div');
+        toast.className = 'toast bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg text-sm font-medium';
+        toast.textContent = evt.detail.value;
+        document.getElementById('toast-container').appendChild(toast);
+        setTimeout(function() { toast.remove(); }, 3000);
+    });
+
+    // --- Stopwatch tracking (persisted via localStorage) ---
+    var trackingRunning = false;
+    var trackingTimer = null;
+    var trackingStart = null;
+    var trackingElapsed = 0;
+
+    function pad(n) { return n < 10 ? '0' + n : '' + n; }
+
+    function saveTracking() {
+        var data = {
+            start: trackingStart,
+            elapsed: trackingElapsed,
+            running: trackingRunning,
+            purpose: document.getElementById('tracking-purpose')?.value || '',
+            client: document.getElementById('tracking-client')?.value || ''
+        };
+        localStorage.setItem('tracking', JSON.stringify(data));
+    }
+
+    function loadTracking() {
+        var raw = localStorage.getItem('tracking');
+        if (!raw) return false;
+        try {
+            var d = JSON.parse(raw);
+            if (d.running) {
+                trackingElapsed = d.elapsed + (Date.now() - d.start);
+                trackingRunning = true;
+                trackingStart = Date.now();
+            } else {
+                trackingElapsed = d.elapsed;
+                trackingRunning = false;
+                trackingStart = null;
+            }
+            document.getElementById('tracking-purpose').value = d.purpose || '';
+            loadClientDropdown(d.client);
+            return true;
+        } catch(e) {
+            return false;
+        }
+    }
+
+    function loadClientDropdown(selectedVal) {
+        var sel = document.getElementById('tracking-client');
+        if (!sel) return;
+        // Try to copy options from the dashboard modal
+        var src = document.querySelector('#newEntryModal select[name=client_id]');
+        if (src) {
+            sel.innerHTML = src.innerHTML;
+        }
+        if (selectedVal) sel.value = selectedVal;
+        sel.onchange = function() { saveTracking(); };
+        document.getElementById('tracking-purpose').oninput = function() { saveTracking(); };
+    }
+
+    function updateTimerDisplay() {
+        var total = trackingElapsed + (trackingRunning ? (Date.now() - trackingStart) : 0);
+        var s = Math.floor(total / 1000);
+        var h = Math.floor(s / 3600);
+        var m = Math.floor((s % 3600) / 60);
+        s = s % 60;
+        var timeStr = pad(h) + ':' + pad(m) + ':' + pad(s);
+        document.getElementById('tracking-timer').textContent = timeStr;
+        if (!window._baseTitle) window._baseTitle = document.title.replace(/^\[.*?\]\s*/, '');
+        document.title = '[' + timeStr + '] ' + window._baseTitle;
+    }
+
+    function showTrackingBar() {
+        document.getElementById('tracking-bar').classList.remove('hidden');
+        updateStatusDisplay();
+    }
+
+    function updateStatusDisplay() {
+        var status = document.getElementById('tracking-status');
+        var btn = document.getElementById('tracking-pause-btn');
+        if (trackingRunning) {
+            status.textContent = 'Läuft';
+            status.className = 'text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-medium';
+            btn.innerHTML = '<i class="fas fa-pause mr-1"></i> Pause';
+            btn.className = 'px-3 py-1.5 text-sm font-medium bg-amber-100 text-amber-700 rounded-lg hover:bg-amber-200 transition';
+        } else {
+            status.textContent = 'Pausiert';
+            status.className = 'text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium';
+            btn.innerHTML = '<i class="fas fa-play mr-1"></i> Fortsetzen';
+            btn.className = 'px-3 py-1.5 text-sm font-medium bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition';
+        }
+    }
+
+    function startTracking() {
+        trackingStart = Date.now();
+        trackingElapsed = 0;
+        trackingRunning = true;
+        document.getElementById('tracking-purpose').value = '';
+        document.getElementById('tracking-client').value = '';
+        showTrackingBar();
+        saveTracking();
+        if (trackingTimer) clearInterval(trackingTimer);
+        trackingTimer = setInterval(function() { updateTimerDisplay(); saveTracking(); }, 200);
+        updateTimerDisplay();
+    }
+
+    function togglePause() {
+        if (trackingRunning) {
+            trackingElapsed += Date.now() - trackingStart;
+            trackingRunning = false;
+            trackingStart = null;
+        } else {
+            trackingStart = Date.now();
+            trackingRunning = true;
+        }
+        updateStatusDisplay();
+        saveTracking();
+    }
+
+    function cancelTracking() {
+        var total = trackingElapsed + (trackingRunning ? Date.now() - trackingStart : 0);
+        if (total > 10000) {
+            if (!confirm('Zeiterfassung wirklich abbrechen? Die erfasste Zeit geht verloren.')) return;
+        }
+        resetTracking();
+    }
+
+    function resetTracking() {
+        if (trackingTimer) clearInterval(trackingTimer);
+        trackingStart = null;
+        trackingElapsed = 0;
+        trackingRunning = false;
+        localStorage.removeItem('tracking');
+        document.getElementById('tracking-bar').classList.add('hidden');
+        if (window._baseTitle) { document.title = window._baseTitle; }
+    }
+
+    function finishTracking() {
+        var totalMs = trackingElapsed + (trackingRunning ? Date.now() - trackingStart : 0);
+        if (totalMs < 60000) {
+            alert('Bitte mindestens 1 Minute erfassen.');
+            return;
+        }
+
+        var purpose = document.getElementById('tracking-purpose').value.trim();
+        if (!purpose) {
+            alert('Bitte eine Beschreibung angeben.');
+            return;
+        }
+
+        var clientID = document.getElementById('tracking-client').value;
+        var now = new Date();
+        var startTime = new Date(now.getTime() - totalMs);
+
+        var date = now.toISOString().split('T')[0];
+        var timeFrom = pad(startTime.getHours()) + ':' + pad(startTime.getMinutes());
+        var timeTo = pad(now.getHours()) + ':' + pad(now.getMinutes());
+        var hours = (totalMs / 3600000).toFixed(2);
+
+        var body = 'date=' + encodeURIComponent(date) +
+            '&time_from=' + encodeURIComponent(timeFrom) +
+            '&time_to=' + encodeURIComponent(timeTo) +
+            '&hours=' + hours +
+            '&purpose=' + encodeURIComponent(purpose) +
+            '&client_id=' + encodeURIComponent(clientID);
+
+        resetTracking();
+
+        fetch('/entries', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRF-Token': getCSRFToken()
+            },
+            body: body
+        }).then(function(r) {
+            if (r.redirected) window.location.href = r.url;
+            else window.location.reload();
+        });
+    }
+
+    // Init on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        if (loadTracking()) {
+            showTrackingBar();
+            if (trackingTimer) clearInterval(trackingTimer);
+            trackingTimer = setInterval(function() { updateTimerDisplay(); saveTracking(); }, 200);
+            updateTimerDisplay();
+        }
+    });
+</script>
+</body>
+</html>
+{{end}}

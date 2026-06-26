@@ -1,0 +1,130 @@
+{{define "onboarding.html"}}<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Einrichtung - Stundenerfassung</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .step-active { background: #3b82f6; color: white; }
+        .step-pending { background: #e5e7eb; color: #9ca3af; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen flex items-center justify-center">
+    <div class="w-full max-w-md mx-4">
+        <div class="text-center mb-8">
+            <i class="fas fa-clock text-primaryLight text-4xl mb-3"></i>
+            <h1 class="text-2xl font-bold text-gray-900">Willkommen</h1>
+            <p class="text-gray-500 text-sm mt-1">Einrichtung in 5 Schritten</p>
+        </div>
+
+        <div class="flex justify-center gap-2 mb-8">
+            {{$step := .Step}}
+            <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold {{if ge $step 1}}step-active{{else}}step-pending{{end}}">1</div>
+            <div class="w-6 flex items-center justify-center text-gray-300">—</div>
+            <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold {{if ge $step 2}}step-active{{else}}step-pending{{end}}">2</div>
+            <div class="w-6 flex items-center justify-center text-gray-300">—</div>
+            <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold {{if ge $step 3}}step-active{{else}}step-pending{{end}}">3</div>
+            <div class="w-6 flex items-center justify-center text-gray-300">—</div>
+            <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold {{if ge $step 4}}step-active{{else}}step-pending{{end}}">4</div>
+            <div class="w-6 flex items-center justify-center text-gray-300">—</div>
+            <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold {{if ge $step 5}}step-active{{else}}step-pending{{end}}">5</div>
+        </div>
+
+        {{if .Message}}
+        <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 text-sm">
+            <i class="fas fa-exclamation-circle mr-2"></i>{{.Message}}
+        </div>
+        {{end}}
+
+        {{if eq $step 1}}
+        <div class="bg-white rounded-2xl shadow-xl p-8">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">Administrator-Konto</h2>
+            <form method="POST" action="/onboarding?step=1" class="space-y-4">
+                <div>
+                    <label for="username" class="block text-sm font-medium text-gray-700 mb-1">Benutzername</label>
+                    <input type="text" id="username" name="username" required autofocus class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primaryLight outline-none text-sm">
+                </div>
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Passwort (mind. 4 Zeichen)</label>
+                    <input type="password" id="password" name="password" required minlength="4" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primaryLight outline-none text-sm">
+                </div>
+                <button type="submit" class="w-full px-4 py-2.5 text-sm font-medium text-white bg-primaryLight hover:bg-primary rounded-lg transition shadow-sm">
+                    Weiter <i class="fas fa-arrow-right ml-1"></i>
+                </button>
+            </form>
+
+            <div class="mt-6 pt-6 border-t border-gray-200">
+                <p class="text-sm text-gray-500 mb-4">Oder stelle eine zuvor exportierte Datenbank wieder her:</p>
+                <form method="POST" action="/onboarding?step=1" enctype="multipart/form-data" class="space-y-3">
+                    <input type="file" name="db_file" accept=".db" required
+                        class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 file:transition">
+                    <button type="submit" class="w-full px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition">
+                        <i class="fas fa-upload mr-1.5"></i> Backup importieren
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        {{else if eq $step 2}}
+        <div class="bg-white rounded-2xl shadow-xl p-8">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">Persönliche Daten</h2>
+            <p class="text-sm text-gray-500 mb-4">Diese Daten werden für E-Mails und Exporte verwendet.</p>
+            <form method="POST" action="/onboarding?step=2" class="space-y-4">
+                <div>
+                    <label for="first_name" class="block text-sm font-medium text-gray-700 mb-1">Vorname</label>
+                    <input type="text" id="first_name" name="first_name" autofocus class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primaryLight outline-none text-sm">
+                </div>
+                <div>
+                    <label for="last_name" class="block text-sm font-medium text-gray-700 mb-1">Nachname *</label>
+                    <input type="text" id="last_name" name="last_name" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primaryLight outline-none text-sm">
+                </div>
+                <button type="submit" class="w-full px-4 py-2.5 text-sm font-medium text-white bg-primaryLight hover:bg-primary rounded-lg transition shadow-sm">
+                    Weiter <i class="fas fa-arrow-right ml-1"></i>
+                </button>
+            </form>
+        </div>
+
+        {{else if eq $step 3}}
+        <div class="bg-white rounded-2xl shadow-xl p-8">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">Erster Auftraggeber</h2>
+            <form method="POST" action="/onboarding?step=3" class="space-y-4">
+                <div><label for="name" class="block text-sm font-medium text-gray-700 mb-1">Name</label><input type="text" id="name" name="name" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primaryLight outline-none text-sm" placeholder="z.B. Musterfirma GmbH"></div>
+                <div><label for="email" class="block text-sm font-medium text-gray-700 mb-1">E-Mail</label><input type="email" id="email" name="email" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primaryLight outline-none text-sm" placeholder="info@musterfirma.de"></div>
+                <div class="flex gap-3">
+                    <button type="submit" name="skip" value="1" class="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition">Überspringen</button>
+                    <button type="submit" class="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-primaryLight hover:bg-primary rounded-lg transition shadow-sm">Speichern <i class="fas fa-arrow-right ml-1"></i></button>
+                </div>
+            </form>
+        </div>
+
+        {{else if eq $step 4}}
+        <div class="bg-white rounded-2xl shadow-xl p-8">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">Telegram-Bot</h2>
+            <p class="text-sm text-gray-500 mb-4">Optional: Erstelle einen Bot via <a href="https://t.me/BotFather" target="_blank" class="text-primaryLight hover:underline">@BotFather</a> und trage den Token ein.</p>
+            <form method="POST" action="/onboarding?step=4" class="space-y-4">
+                <div><label for="telegram_token" class="block text-sm font-medium text-gray-700 mb-1">Bot Token</label><input type="text" id="telegram_token" name="telegram_token" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primaryLight outline-none text-sm" placeholder="123456:ABC-DEF..."></div>
+                <div class="flex gap-3">
+                    <button type="submit" name="skip" value="1" class="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition">Überspringen</button>
+                    <button type="submit" class="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-primaryLight hover:bg-primary rounded-lg transition shadow-sm">Speichern <i class="fas fa-arrow-right ml-1"></i></button>
+                </div>
+            </form>
+        </div>
+
+        {{else if eq $step 5}}
+        <div class="bg-white rounded-2xl shadow-xl p-8">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">Fertig!</h2>
+            <form method="POST" action="/onboarding?step=5" class="space-y-4">
+                <div><label for="header_title" class="block text-sm font-medium text-gray-700 mb-1">App-Titel</label><input type="text" id="header_title" name="header_title" value="Cold-IT Zeiterfassung" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primaryLight outline-none text-sm"></div>
+                <div><label for="footer_text" class="block text-sm font-medium text-gray-700 mb-1">Footer-Text</label><input type="text" id="footer_text" name="footer_text" value="Made by Cold-IT" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primaryLight outline-none text-sm"></div>
+                <button type="submit" class="w-full px-4 py-2.5 text-sm font-medium text-white bg-primaryLight hover:bg-primary rounded-lg transition shadow-sm"><i class="fas fa-check mr-1.5"></i> Abschließen</button>
+            </form>
+        </div>
+        {{end}}
+    </div>
+</body>
+</html>
+{{end}}

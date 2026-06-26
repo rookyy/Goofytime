@@ -1,0 +1,114 @@
+{{define "admin_settings.html"}}
+{{template "head" .}}
+<div class="fade-in max-w-2xl mx-auto">
+    <h1 class="text-2xl font-bold text-gray-900 mb-2">Admin-Einstellungen</h1>
+    <p class="text-gray-500 text-sm mb-8">Benutzer, Backup und globale Einstellungen</p>
+
+    {{if .Message}}
+    <div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-6 text-sm fade-in">
+        <i class="fas fa-check-circle mr-2"></i>{{.Message}}
+    </div>
+    {{end}}
+
+    <div class="space-y-6">
+        <div class="bg-white rounded-2xl shadow-xl p-8">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">Benutzer</h2>
+            <div class="mb-4 max-h-64 overflow-y-auto">
+                <table class="w-full text-sm">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Benutzername</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Rolle</th>
+                            <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Einträge</th>
+                            <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Stunden</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100" id="admin-users-tbody">
+                        {{range .Users}}
+                        <tr id="user-{{.ID}}" class="hover:bg-gray-50">
+                            <td class="px-4 py-2 font-medium text-gray-900">{{.Username}}</td>
+                            <td class="px-4 py-2">
+                                {{if .IsAdmin}}
+                                <span class="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">Admin</span>
+                                {{else}}
+                                <span class="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">Benutzer</span>
+                                {{end}}
+                            </td>
+                            <td class="px-4 py-2 text-right text-gray-600">{{.EntryCount}}</td>
+                            <td class="px-4 py-2 text-right text-gray-600">{{formatHours .TotalHours}}</td>
+                        </tr>
+                        {{end}}
+                    </tbody>
+                </table>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="document.getElementById('adminUserModal').classList.remove('hidden')"
+                    class="px-3 py-1.5 text-sm font-medium bg-primaryLight hover:bg-primary text-white rounded-lg transition">
+                    <i class="fas fa-user-plus mr-1"></i> Neuer Benutzer
+                </button>
+                <a href="/admin"
+                    class="px-3 py-1.5 text-sm font-medium bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg transition">
+                    <i class="fas fa-users mr-1"></i> Vollständige Verwaltung
+                </a>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-xl p-8">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">Anwendung</h2>
+            <form method="POST" action="/admin/settings" class="space-y-4">
+                <div>
+                    <label for="header_title" class="block text-sm font-medium text-gray-700 mb-1">Header-Titel</label>
+                    <input type="text" id="header_title" name="header_title" value="{{.Settings.HeaderTitle}}"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primaryLight focus:border-primaryLight outline-none transition text-sm">
+                </div>
+                <div>
+                    <label for="footer_text" class="block text-sm font-medium text-gray-700 mb-1">Footer-Text</label>
+                    <input type="text" id="footer_text" name="footer_text" value="{{.Settings.FooterText}}"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primaryLight focus:border-primaryLight outline-none transition text-sm">
+                </div>
+                <div class="flex justify-end pt-2">
+                    <button type="submit"
+                        class="px-4 py-2 text-sm font-medium text-white bg-primaryLight hover:bg-primary rounded-lg transition shadow-sm">
+                        <i class="fas fa-save mr-1.5"></i> Speichern
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-xl p-8">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">Datenbank-Backup</h2>
+            <p class="text-sm text-gray-500 mb-4">Lädt die aktuelle Datenbank als Datei herunter.</p>
+            <a href="/admin/backup"
+                class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-primaryLight hover:bg-primary rounded-lg transition shadow-sm">
+                <i class="fas fa-download mr-1.5"></i> Backup herunterladen
+            </a>
+        </div>
+    </div>
+</div>
+
+<div id="adminUserModal" class="hidden fixed inset-0 z-50 overflow-y-auto">
+    <div class="flex items-center justify-center min-h-screen px-4">
+        <div class="fixed inset-0 bg-gray-900/50" onclick="document.getElementById('adminUserModal').classList.add('hidden')"></div>
+        <div class="relative bg-white rounded-2xl shadow-xl max-w-md w-full p-6" onclick="event.stopPropagation()">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-900">Neuer Benutzer</h3>
+                <button onclick="document.getElementById('adminUserModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600 transition">
+                    <i class="fas fa-times text-lg"></i>
+                </button>
+            </div>
+            {{template "user_form_inner" dict "Edit" false "Target" nil "Errors" (dict)}}
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') document.getElementById('adminUserModal').classList.add('hidden');
+});
+document.body.addEventListener('userSaved', function() {
+    document.getElementById('adminUserModal').classList.add('hidden');
+    location.reload();
+});
+</script>
+{{template "foot"}}
+{{end}}

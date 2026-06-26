@@ -1,0 +1,56 @@
+{{define "filter_bar"}}
+<form id="global-filter" hx-get="/dashboard?partial=1" hx-target="#entries-area" hx-trigger="change from:select, input delay:500ms from:input[type=date]" class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-4">
+    <div class="flex flex-wrap items-end gap-3">
+        <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1">Zeitraum</label>
+            <select name="range" onchange="toggleFilterCustomRange(this)" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primaryLight outline-none">
+                <option value="all" {{if not .Range}}selected{{end}}>Gesamt</option>
+                <option value="1m" {{if eq .Range "1m"}}selected{{end}}>Letzter Monat</option>
+                <option value="3m" {{if eq .Range "3m"}}selected{{end}}>Letzten 3 Monate</option>
+                <option value="6m" {{if eq .Range "6m"}}selected{{end}}>Letzten 6 Monate</option>
+                <option value="1y" {{if eq .Range "1y"}}selected{{end}}>Letztes Jahr</option>
+                <option value="custom" {{if eq .Range "custom"}}selected{{end}}>Benutzerdefiniert</option>
+            </select>
+        </div>
+        <div id="filter-custom-range" class="flex gap-2 {{if ne .Range "custom"}}hidden{{end}}">
+            <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1">Von</label>
+                <input type="date" name="from" value="{{.From}}" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primaryLight outline-none">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1">Bis</label>
+                <input type="date" name="to" value="{{.To}}" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primaryLight outline-none">
+            </div>
+        </div>
+        <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1">Auftraggeber</label>
+            <select name="client" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primaryLight outline-none">
+                <option value="">Alle</option>
+                {{$sel := .SelectedClient}}
+                {{range .Clients}}
+                <option value="{{.ID}}" {{if eq .ID $sel}}selected{{end}}>{{.Name}}</option>
+                {{end}}
+            </select>
+        </div>
+        <div class="flex items-center gap-2 pb-0.5">
+            <span class="text-xs text-gray-500">{{.Total}} Einträge</span>
+        </div>
+        <div class="ml-auto flex items-end gap-3">
+            <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1">Pro Seite</label>
+                <select name="size" onchange="this.form.requestSubmit()" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primaryLight outline-none">
+                    <option value="10" {{if eq .PageSize 10}}selected{{end}}>10</option>
+                    <option value="30" {{if eq .PageSize 30}}selected{{end}}>30</option>
+                    <option value="50" {{if eq .PageSize 50}}selected{{end}}>50</option>
+                    <option value="100" {{if eq .PageSize 100}}selected{{end}}>100</option>
+            </select>
+            </div>
+        </div>
+    </div>
+</form>
+<script>
+function toggleFilterCustomRange(sel) {
+    document.getElementById('filter-custom-range').classList.toggle('hidden', sel.value !== 'custom');
+}
+</script>
+{{end}}

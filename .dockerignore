@@ -1,0 +1,7 @@
+*.db
+*.db-*
+data/
+stundenerfassung
+.git/
+.gitignore
+*.md

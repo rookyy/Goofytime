@@ -1,0 +1,246 @@
+{{define "clients.html"}}
+{{template "head" .}}
+<div class="fade-in">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Auftraggeber</h1>
+            <p class="text-gray-500 text-sm mt-1">Auftraggeber verwalten und Einträgen zuweisen</p>
+        </div>
+        <button onclick="document.getElementById('newClientModal').classList.remove('hidden')"
+            class="mt-4 sm:mt-0 inline-flex items-center px-4 py-2.5 bg-primaryLight hover:bg-primary text-white font-medium rounded-lg transition duration-200 text-sm shadow-sm">
+            <i class="fas fa-plus mr-2"></i> Neuer Auftraggeber
+        </button>
+    </div>
+
+    {{$err := .Error}}
+    {{if $err}}
+    <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 text-sm fade-in">
+        <i class="fas fa-exclamation-circle mr-2"></i>{{$err}}
+    </div>
+    {{end}}
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <table class="w-full">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">E-Mail</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Adresse</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Aktion</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+                {{range .Clients}}
+                <tr id="client-{{.ID}}" class="hover:bg-gray-50 transition">
+                    <td class="px-6 py-3 text-sm font-medium text-gray-900">{{.Name}}</td>
+                    <td class="px-6 py-3 text-sm text-gray-600">{{.Email}}</td>
+                    <td class="px-6 py-3 text-sm text-gray-500">{{.Address}}</td>
+                    <td class="px-6 py-3 text-right">
+                        <div class="flex items-center justify-end space-x-1">
+                            <button onclick="openSendMailModal({{.ID}}, '{{.Name}}')"
+                                class="text-gray-400 hover:text-primaryLight transition p-1.5 rounded-lg hover:bg-blue-50"
+                                title="Mail senden">
+                                <i class="fas fa-paper-plane text-sm"></i>
+                            </button>
+                            <button onclick="openEditClientModal({{.ID}})"
+                                class="text-gray-400 hover:text-primaryLight transition p-1.5 rounded-lg hover:bg-blue-50"
+                                title="Bearbeiten">
+                                <i class="fas fa-edit text-sm"></i>
+                            </button>
+                            <button hx-delete="/clients/{{.ID}}"
+                                hx-confirm="Auftraggeber löschen? Die Zuordnung zu Einträgen wird entfernt."
+                                hx-target="#client-{{.ID}}"
+                                hx-swap="outerHTML"
+                                class="text-gray-400 hover:text-red-500 transition p-1.5 rounded-lg hover:bg-red-50"
+                                title="Löschen">
+                                <i class="fas fa-trash text-sm"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {{else}}
+                <tr>
+                    <td colspan="4" class="px-6 py-12 text-center text-gray-400">
+                        <i class="fas fa-building text-3xl mb-3 block"></i>
+                        <p class="text-sm">Keine Auftraggeber vorhanden</p>
+                    </td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div id="newClientModal" class="hidden fixed inset-0 z-50 overflow-y-auto">
+    <div class="flex items-center justify-center min-h-screen px-4">
+        <div class="fixed inset-0 bg-gray-900/50" onclick="document.getElementById('newClientModal').classList.add('hidden')"></div>
+        <div class="relative bg-white rounded-2xl shadow-xl max-w-md w-full p-6" onclick="event.stopPropagation()">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-900">Neuer Auftraggeber</h3>
+                <button onclick="document.getElementById('newClientModal').classList.add('hidden')"
+                    class="text-gray-400 hover:text-gray-600 transition">
+                    <i class="fas fa-times text-lg"></i>
+                </button>
+            </div>
+            {{template "client_form_inner" dict "Client" nil "Errors" (dict)}}
+        </div>
+    </div>
+</div>
+
+<div id="editClientModal" class="hidden fixed inset-0 z-50 overflow-y-auto">
+    <div class="flex items-center justify-center min-h-screen px-4">
+        <div class="fixed inset-0 bg-gray-900/50" onclick="closeEditClientModal()"></div>
+        <div id="editClientContent" class="relative bg-white rounded-2xl shadow-xl max-w-md w-full p-6" onclick="event.stopPropagation()">
+            <div class="p-8 text-center"><i class="fas fa-spinner fa-spin text-2xl text-gray-400"></i></div>
+        </div>
+    </div>
+</div>
+
+<div id="sendMailModal" class="hidden fixed inset-0 z-50 overflow-y-auto">
+    <div class="flex items-center justify-center min-h-screen px-4">
+        <div class="fixed inset-0 bg-gray-900/50" onclick="document.getElementById('sendMailModal').classList.add('hidden')"></div>
+        <div id="sendMailContent" class="relative bg-white rounded-2xl shadow-xl max-w-md w-full p-6" onclick="event.stopPropagation()">
+            <div class="p-8 text-center"><i class="fas fa-spinner fa-spin text-2xl text-gray-400"></i></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function injectCSRFToken(container) {
+        var t = getCSRFToken();
+        if (t) {
+            container.querySelectorAll('form').forEach(function(f) {
+                if (!f.querySelector('input[name=csrf_token]')) {
+                    var i = document.createElement('input');
+                    i.type = 'hidden'; i.name = 'csrf_token'; i.value = t;
+                    f.appendChild(i);
+                }
+            });
+        }
+    }
+    function openEditClientModal(id) {
+        var modal = document.getElementById('editClientModal');
+        var content = document.getElementById('editClientContent');
+        modal.classList.remove('hidden');
+        content.innerHTML = '<div class="p-8 text-center"><i class="fas fa-spinner fa-spin text-2xl text-gray-400"></i></div>';
+        fetch('/clients/' + id + '/edit')
+            .then(r => r.text())
+            .then(html => { content.innerHTML = html; injectCSRFToken(content); });
+    }
+    function closeEditClientModal() { document.getElementById('editClientModal').classList.add('hidden'); }
+    function openSendMailModal(id, name) {
+        var modal = document.getElementById('sendMailModal');
+        var content = document.getElementById('sendMailContent');
+        modal.classList.remove('hidden');
+        content.innerHTML = '<div class="p-8 text-center"><i class="fas fa-spinner fa-spin text-2xl text-gray-400"></i></div>';
+        fetch('/clients/' + id + '/preview-mail')
+            .then(r => r.text())
+            .then(html => { content.innerHTML = html; injectCSRFToken(content); });
+    }
+    function closeSendMailModal() { document.getElementById('sendMailModal').classList.add('hidden'); }
+    function submitClientMail(id) {
+        var form = document.getElementById('clientMailForm');
+        var data = new FormData(form);
+        fetch('/clients/' + id + '/send-mail', { method: 'POST', headers: {'X-CSRF-Token': getCSRFToken()}, body: data })
+            .then(function(r) { if (r.redirected) window.location.href = r.url; else window.location.reload(); });
+    }
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') { document.getElementById('newClientModal').classList.add('hidden'); closeEditClientModal(); closeSendMailModal(); }
+    });
+</script>
+{{template "foot"}}
+{{end}}
+
+{{define "client_form_inner"}}
+{{$errors := .Errors}}
+{{$client := .Client}}
+<form method="POST"
+    {{if $client}}action="/clients/{{$client.ID}}/update"{{else}}action="/clients"{{end}}
+    class="space-y-4">
+    <div>
+        <label for="name" class="block text-sm font-medium text-gray-700 mb-1" title="Name des Auftraggebers, z.B. Firma oder Person">Name *</label>
+        <input type="text" id="name" name="name" required value="{{if $client}}{{$client.Name}}{{end}}"
+            class="w-full px-3 py-2 border {{if index $errors "name"}}border-red-300 bg-red-50{{else}}border-gray-300{{end}} rounded-lg focus:ring-2 focus:ring-primaryLight focus:border-primaryLight outline-none transition text-sm"
+            title="Name des Auftraggebers">
+        {{if index $errors "name"}}<p class="text-red-500 text-xs mt-1">{{index $errors "name"}}</p>{{end}}
+    </div>
+    <div>
+        <label for="email" class="block text-sm font-medium text-gray-700 mb-1" title="Allgemeine E-Mail-Adresse des Auftraggebers">E-Mail</label>
+        <input type="email" id="email" name="email" value="{{if $client}}{{$client.Email}}{{end}}"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primaryLight focus:border-primaryLight outline-none transition text-sm"
+            title="Allgemeine E-Mail-Adresse des Auftraggebers">
+    </div>
+    <div>
+        <label for="recipients" class="block text-sm font-medium text-gray-700 mb-1" title="E-Mail-Adressen für den automatischen Mailversand. Mehrere Adressen mit Komma trennen.">Empfänger (mehrere mit Komma trennen)</label>
+        <input type="text" id="recipients" name="recipients" value="{{if $client}}{{$client.Recipients}}{{end}}"
+            placeholder="mail@example.com, mail2@example.com"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primaryLight focus:border-primaryLight outline-none transition text-sm"
+            title="E-Mail-Adressen für den Mailversand. Mehrere mit Komma getrennt.">
+    </div>
+    <div>
+        <label for="hourly_rate" class="block text-sm font-medium text-gray-700 mb-1" title="Vergütung pro Stunde für diesen Auftraggeber (für die Statistik)">Stundenlohn (€)</label>
+        <input type="text" id="hourly_rate" name="hourly_rate"
+            value="{{if $client}}{{if gt $client.HourlyRate 0.0}}{{printf "%.2f" $client.HourlyRate}}{{end}}{{end}}"
+            placeholder="0.00" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primaryLight focus:border-primaryLight outline-none transition text-sm"
+            title="Stundenlohn in Euro, z.B. 85.00. Wird für die Statistik verwendet.">
+    </div>
+    <div>
+        <label for="address" class="block text-sm font-medium text-gray-700 mb-1" title="Postanschrift des Auftraggebers">Adresse</label>
+        <textarea id="address" name="address" rows="2"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primaryLight focus:border-primaryLight outline-none transition text-sm"
+            title="Postanschrift des Auftraggebers">{{if $client}}{{$client.Address}}{{end}}</textarea>
+    </div>
+    <div>
+        <label for="mail_text" class="block text-sm font-medium text-gray-700 mb-1" title="Individueller Text für E-Mails an diesen Auftraggeber. Überschreibt den Standardtext aus den Mail-Einstellungen.">Mailtext (leer = Standardtext)</label>
+        <textarea id="mail_text" name="mail_text" rows="3"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primaryLight focus:border-primaryLight outline-none transition text-sm"
+            placeholder="Individueller Text für diesen Auftraggeber..."
+            title="Individueller E-Mail-Text. Leer lassen für den Standardtext.">{{if $client}}{{$client.MailText}}{{end}}</textarea>
+    </div>
+    <div>
+        <label for="mail_subject" class="block text-sm font-medium text-gray-700 mb-1" title="Betreffzeile für E-Mails an diesen Auftraggeber. Überschreibt den Standard-Betreff aus den Mail-Einstellungen. Platzhalter: %M = Monat, %J = Jahr, %N = Nachname.">Betreff (leer = Standard-Betreff)</label>
+        <input type="text" id="mail_subject" name="mail_subject"
+            value="{{if $client}}{{$client.MailSubject}}{{end}}"
+            placeholder="Stunden Gross - %M %J"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primaryLight focus:border-primaryLight outline-none transition text-sm"
+            title="Betreffzeile. Leer lassen für den Standard-Betreff. %M = Monat, %J = Jahr.">
+    </div>
+    <div class="border-t border-gray-200 pt-4">
+        <h4 class="text-sm font-semibold text-gray-700 mb-3" title="Kontaktperson beim Auftraggeber">Ansprechpartner</h4>
+        <div class="grid grid-cols-2 gap-3">
+            <div>
+                <label for="contact_name" class="block text-xs font-medium text-gray-600 mb-1" title="Name der Kontaktperson">Name</label>
+                <input type="text" id="contact_name" name="contact_name" value="{{if $client}}{{$client.ContactName}}{{end}}"
+                    class="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primaryLight outline-none"
+                    title="Name der Kontaktperson">
+            </div>
+            <div>
+                <label for="contact_phone" class="block text-xs font-medium text-gray-600 mb-1" title="Telefonnummer der Kontaktperson">Telefon</label>
+                <input type="text" id="contact_phone" name="contact_phone" value="{{if $client}}{{$client.ContactPhone}}{{end}}"
+                    class="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primaryLight outline-none"
+                    title="Telefonnummer der Kontaktperson">
+            </div>
+            <div class="col-span-2">
+                <label for="contact_email" class="block text-xs font-medium text-gray-600 mb-1" title="E-Mail-Adresse der Kontaktperson">E-Mail</label>
+                <input type="email" id="contact_email" name="contact_email" value="{{if $client}}{{$client.ContactEmail}}{{end}}"
+                    class="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primaryLight outline-none"
+                    title="E-Mail-Adresse der Kontaktperson">
+            </div>
+        </div>
+    </div>
+    <div class="flex items-center mt-3" title="Aktiviert den automatischen monatlichen Mailversand für diesen Auftraggeber">
+        <input type="checkbox" id="auto_mail_enabled" name="auto_mail_enabled"
+            {{if $client}}{{if $client.AutoMailEnabled}}checked{{end}}{{end}}
+            class="h-4 w-4 text-primaryLight focus:ring-primaryLight border-gray-300 rounded">
+        <label for="auto_mail_enabled" class="ml-2 text-sm text-gray-700">Auto-Mail aktiviert</label>
+    </div>
+    <div class="flex justify-end space-x-3 pt-2">
+        <button type="button" onclick="document.getElementById('newClientModal')?.classList.add('hidden'); closeEditClientModal();"
+            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition">Abbrechen</button>
+        <button type="submit"
+            class="px-4 py-2 text-sm font-medium text-white bg-primaryLight hover:bg-primary rounded-lg transition shadow-sm">
+            <i class="fas fa-save mr-1.5"></i> Speichern
+        </button>
+    </div>
+</form>
+{{end}}
