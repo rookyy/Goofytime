@@ -16,7 +16,7 @@ Beim ersten Start (keine Benutzer in der Datenbank) öffnet sich automatisch ein
 | **4. Telegram** | Optional einen Telegram-Bot-Token für monatliche Benachrichtigungen hinterlegen oder überspringen. |
 | **5. Abschluss** | App-Titel und Footer-Text festlegen, dann startet die Anwendung. |
 
-Nach Abschluss wird automatisch eingeloggt (`justin`/`test` als Fallback wenn kein Name vergeben wurde).
+Nach Abschluss wird automatisch mit dem erstellten Admin-Konto eingeloggt.
 
 ## Funktionen
 
@@ -37,7 +37,6 @@ Nach Abschluss wird automatisch eingeloggt (`justin`/`test` als Fallback wenn ke
 go run .
 # http://localhost:8080
 # Beim ersten Start: Onboarding unter /onboarding
-# Bei bestehender DB: Login justin / test
 ```
 
 ## Docker
