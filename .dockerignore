@@ -1,7 +1,7 @@
 *.db
 *.db-*
 data/
-stundenerfassung
+goofytime
 .git/
 .gitignore
 *.md

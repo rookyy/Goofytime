@@ -3,8 +3,8 @@ package handlers
 import (
 	"net/http"
 
-	"stundenerfassung/middleware"
-	"stundenerfassung/models"
+	"goofytime/middleware"
+	"goofytime/models"
 )
 
 func LogPage(w http.ResponseWriter, r *http.Request) {

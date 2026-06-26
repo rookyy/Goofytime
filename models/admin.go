@@ -1,6 +1,6 @@
 package models
 
-import "stundenerfassung/database"
+import "goofytime/database"
 
 type AdminSettings struct {
 	HeaderTitle string
@@ -8,7 +8,7 @@ type AdminSettings struct {
 }
 
 func GetAdminSettings() *AdminSettings {
-	s := &AdminSettings{HeaderTitle: "Stundenerfassung", FooterText: "Made by Cold-IT"}
+	s := &AdminSettings{HeaderTitle: "Goofytime", FooterText: "Made by Cold-IT"}
 	row := database.DB.QueryRow("SELECT header_title, footer_text FROM admin_settings WHERE id = 1")
 	row.Scan(&s.HeaderTitle, &s.FooterText)
 	return s
@@ -16,7 +16,7 @@ func GetAdminSettings() *AdminSettings {
 
 func SaveAdminSettings(headerTitle, footerText string) {
 	if headerTitle == "" {
-		headerTitle = "Stundenerfassung"
+		headerTitle = "Goofytime"
 	}
 	if footerText == "" {
 		footerText = "Made by Cold-IT"

@@ -87,10 +87,10 @@ func migrate() {
 		)`,
 		`CREATE TABLE IF NOT EXISTS admin_settings (
 			id INTEGER PRIMARY KEY CHECK (id = 1),
-			header_title TEXT NOT NULL DEFAULT 'Stundenerfassung',
+			header_title TEXT NOT NULL DEFAULT 'Goofytime',
 			footer_text TEXT NOT NULL DEFAULT 'Made by Cold-IT'
 		)`,
-		`INSERT OR IGNORE INTO admin_settings (id, header_title, footer_text) VALUES (1, 'Stundenerfassung', 'Made by Cold-IT')`,
+		`INSERT OR IGNORE INTO admin_settings (id, header_title, footer_text) VALUES (1, 'Goofytime', 'Made by Cold-IT')`,
 		`CREATE INDEX IF NOT EXISTS idx_time_entries_user_id ON time_entries(user_id)`,
 		`CREATE INDEX IF NOT EXISTS idx_time_entries_date ON time_entries(date)`,
 		`CREATE INDEX IF NOT EXISTS idx_time_entries_billed ON time_entries(billed)`,

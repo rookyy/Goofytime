@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"stundenerfassung/database"
+	"goofytime/database"
 )
 
 type TimeEntry struct {

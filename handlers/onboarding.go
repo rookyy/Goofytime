@@ -9,8 +9,8 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 
-	"stundenerfassung/database"
-	"stundenerfassung/models"
+	"goofytime/database"
+	"goofytime/models"
 )
 
 func OnboardingPage(w http.ResponseWriter, r *http.Request) {
@@ -40,7 +40,7 @@ func OnboardingStep(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		dbPath := os.Getenv("DB_PATH")
-		if dbPath == "" { dbPath = "stunden.db" }
+		if dbPath == "" { dbPath = "goofytime.db" }
 		if database.DB != nil {
 			if err := database.DB.Close(); err != nil {
 				log.Printf("DB close error: %v", err)

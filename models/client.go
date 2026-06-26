@@ -1,7 +1,7 @@
 package models
 
 import (
-	"stundenerfassung/database"
+	"goofytime/database"
 	"time"
 )
 

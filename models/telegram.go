@@ -1,6 +1,6 @@
 package models
 
-import "stundenerfassung/database"
+import "goofytime/database"
 
 type TelegramToken struct {
 	ID     int

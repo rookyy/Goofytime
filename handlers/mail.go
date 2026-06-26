@@ -13,8 +13,8 @@ import (
 
 	"github.com/go-pdf/fpdf"
 
-	"stundenerfassung/middleware"
-	"stundenerfassung/models"
+	"goofytime/middleware"
+	"goofytime/models"
 )
 
 type SMTPConfig struct {

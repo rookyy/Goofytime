@@ -1,10 +1,10 @@
 # Binary
-stundenerfassung
+goofytime
 
 # Database
-stunden.db
-stunden.db-shm
-stunden.db-wal
+goofytime.db
+goofytime.db-shm
+goofytime.db-wal
 data/
 
 # macOS

@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"stundenerfassung/database"
-	"stundenerfassung/middleware"
-	"stundenerfassung/models"
+	"goofytime/database"
+	"goofytime/middleware"
+	"goofytime/models"
 )
 
 func AdminSettingsPage(w http.ResponseWriter, r *http.Request) {
@@ -43,7 +43,7 @@ func BackupDatabase(w http.ResponseWriter, r *http.Request) {
 	time.Sleep(100 * time.Millisecond)
 
 	dbPath := os.Getenv("DB_PATH")
-	if dbPath == "" { dbPath = "stunden.db" }
+	if dbPath == "" { dbPath = "goofytime.db" }
 
 	data, err := os.ReadFile(dbPath)
 	if err != nil {
@@ -52,7 +52,7 @@ func BackupDatabase(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/octet-stream")
-	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=stunden_backup_%s.db", time.Now().Format("2006-01-02_1504")))
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=goofytime_backup_%s.db", time.Now().Format("2006-01-02_1504")))
 	w.Write(data)
 }
 
@@ -75,7 +75,7 @@ func RestoreDatabase(w http.ResponseWriter, r *http.Request) {
 
 	dbPath := os.Getenv("DB_PATH")
 	if dbPath == "" {
-		dbPath = "stunden.db"
+		dbPath = "goofytime.db"
 	}
 
 	if database.DB != nil {

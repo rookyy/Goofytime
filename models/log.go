@@ -3,7 +3,7 @@ package models
 import (
 	"time"
 
-	"stundenerfassung/database"
+	"goofytime/database"
 )
 
 type ActivityLog struct {

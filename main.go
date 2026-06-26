@@ -6,16 +6,16 @@ import (
 	"os"
 	"time"
 
-	"stundenerfassung/database"
-	"stundenerfassung/handlers"
-	"stundenerfassung/middleware"
-	"stundenerfassung/models"
+	"goofytime/database"
+	"goofytime/handlers"
+	"goofytime/middleware"
+	"goofytime/models"
 )
 
 func main() {
 	dbPath := os.Getenv("DB_PATH")
 	if dbPath == "" {
-		dbPath = "stunden.db"
+		dbPath = "goofytime.db"
 	}
 
 	database.Init(dbPath)

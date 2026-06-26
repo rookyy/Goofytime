@@ -7,8 +7,8 @@ import (
 	"net/smtp"
 	"strconv"
 
-	"stundenerfassung/middleware"
-	"stundenerfassung/models"
+	"goofytime/middleware"
+	"goofytime/models"
 )
 
 func MailSettingsPage(w http.ResponseWriter, r *http.Request) {
@@ -84,7 +84,7 @@ func SendTestMail(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	body := fmt.Sprintf("Dies ist eine Test-Mail der Stundenerfassung.%s", sig)
+	body := fmt.Sprintf("Dies ist eine Test-Mail der Goofytime.%s", sig)
 	cfg := SMTPConfig{
 		Host:     settings.SMTPHost,
 		Port:     fmt.Sprintf("%d", settings.SMTPPort),
@@ -93,7 +93,7 @@ func SendTestMail(w http.ResponseWriter, r *http.Request) {
 		From:     settings.SMTPFrom,
 	}
 
-	err := sendSimpleEmail(cfg, recipient, "Stundenerfassung - Testmail", body)
+	err := sendSimpleEmail(cfg, recipient, "Goofytime - Testmail", body)
 	if err != nil {
 		log.Printf("Testmail error: %v", err)
 		http.Redirect(w, r, "/mail-settings?message=Fehler+beim+Senden", http.StatusSeeOther)

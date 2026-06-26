@@ -10,8 +10,8 @@ import (
 	"github.com/go-pdf/fpdf"
 	"golang.org/x/text/encoding/charmap"
 
-	"stundenerfassung/middleware"
-	"stundenerfassung/models"
+	"goofytime/middleware"
+	"goofytime/models"
 )
 
 var fallbackReplacer = strings.NewReplacer(

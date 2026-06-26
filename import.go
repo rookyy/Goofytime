@@ -6,7 +6,7 @@ import (
 
 	"github.com/xuri/excelize/v2"
 
-	"stundenerfassung/models"
+	"goofytime/models"
 )
 
 func importFromExcel() (int, error) {

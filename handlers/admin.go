@@ -6,8 +6,8 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 
-	"stundenerfassung/middleware"
-	"stundenerfassung/models"
+	"goofytime/middleware"
+	"goofytime/models"
 )
 
 type UserWithStats struct {

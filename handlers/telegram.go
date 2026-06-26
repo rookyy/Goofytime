@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"stundenerfassung/models"
+	"goofytime/models"
 )
 
 var (
@@ -193,7 +193,7 @@ func handleTelegramMessage(chatID, text string) {
 	}
 
 	if strings.HasPrefix(text, "/start") {
-		sendTelegramMessage(chatID, "Willkommen! Sende deine Chat-ID, um Benachrichtigungen zu aktivieren.\nDeine Chat-ID ist: `"+chatID+"`\n\nTrage diese in den Einstellungen der Stundenerfassung ein.\n\n*Befehle:*\n/status - Offene Stunden & Einträge\n/monat - Monatsübersicht\n/export - PDF des Monats senden")
+		sendTelegramMessage(chatID, "Willkommen! Sende deine Chat-ID, um Benachrichtigungen zu aktivieren.\nDeine Chat-ID ist: `"+chatID+"`\n\nTrage diese in den Einstellungen der Goofytime ein.\n\n*Befehle:*\n/status - Offene Stunden & Einträge\n/monat - Monatsübersicht\n/export - PDF des Monats senden")
 		return
 	}
 

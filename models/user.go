@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"time"
 
-	"stundenerfassung/database"
+	"goofytime/database"
 )
 
 type User struct {

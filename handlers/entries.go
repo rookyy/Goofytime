@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"stundenerfassung/middleware"
-	"stundenerfassung/models"
+	"goofytime/middleware"
+	"goofytime/models"
 )
 
 func Dashboard(w http.ResponseWriter, r *http.Request) {

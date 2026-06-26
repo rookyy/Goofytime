@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"stundenerfassung/middleware"
-	"stundenerfassung/models"
+	"goofytime/middleware"
+	"goofytime/models"
 )
 
 func ClientsPage(w http.ResponseWriter, r *http.Request) {

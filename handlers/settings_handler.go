@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"stundenerfassung/middleware"
-	"stundenerfassung/models"
+	"goofytime/middleware"
+	"goofytime/models"
 )
 
 func SettingsPage(w http.ResponseWriter, r *http.Request) {

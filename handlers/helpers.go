@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"stundenerfassung/models"
+	"goofytime/models"
 )
 
 var Templates *template.Template

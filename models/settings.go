@@ -3,7 +3,7 @@ package models
 import (
 	"strings"
 
-	"stundenerfassung/database"
+	"goofytime/database"
 )
 
 type UserSettings struct {

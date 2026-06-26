@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"stundenerfassung/models"
+	"goofytime/models"
 )
 
 type contextKey string

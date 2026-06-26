@@ -1,7 +1,7 @@
 services:
-  stundenerfassung:
+  goofytime:
     build: .
-    container_name: stundenerfassung
+    container_name: goofytime
     restart: unless-stopped
     ports:
       - "8080:8080"
@@ -9,7 +9,7 @@ services:
       - ./data:/app/data
     environment:
       - PORT=8080
-      - DB_PATH=/app/data/stunden.db
+      - DB_PATH=/app/data/goofytime.db
       - TZ=Europe/Berlin
       # Telegram Bot (optional)
       # - TELEGRAM_BOT_TOKEN=123456:ABC-DEF

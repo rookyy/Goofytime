@@ -5,7 +5,7 @@ import (
 	"encoding/hex"
 	"time"
 
-	"stundenerfassung/database"
+	"goofytime/database"
 )
 
 type Session struct {
