@@ -72,3 +72,4 @@ SMTP-Einstellungen werden pro Benutzer im Web-UI unter **Mail** konfiguriert.
 └── stunden.db               # SQLite-DB (auto-erstellt)
 ```
 # Goofytime
+# Goofytime
