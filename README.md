@@ -14,30 +14,6 @@
 
 ---
 
-## 🚀 Schnellstart
-
-```bash
-go run .
-# → http://localhost:8080
-# Beim ersten Start öffnet sich das Onboarding
-```
-
----
-
-## 🧭 Onboarding
-
-Beim ersten Start führt ein **5-stufiger Assistent** durch die Einrichtung:
-
-| Schritt | |
-|---|---|
-| **1. Admin-Konto** | Benutzername & Passwort festlegen. Alternativ DB-Backup importieren. |
-| **2. Persönliche Daten** | Vor- und Nachname für E-Mails und PDF-Exporte. |
-| **3. Erster Auftraggeber** | Optional anlegen oder überspringen. |
-| **4. Telegram** | Bot-Token für Benachrichtigungen (optional). |
-| **5. Abschluss** | App-Titel & Footer festlegen. Danach automatischer Login. |
-
----
-
 ## ✨ Funktionen
 
 | Bereich | Details |
@@ -55,20 +31,13 @@ Beim ersten Start führt ein **5-stufiger Assistent** durch die Einrichtung:
 
 ---
 
-## 🤖 Telegram-Bot
+## 🚀 Schnellstart
 
-Mit `TELEGRAM_BOT_TOKEN` wird ein Telegram-Bot gestartet:
-
-| Befehl | Beschreibung |
-|---|---|
-| `/start` | Chat-ID anzeigen & Befehlsübersicht |
-| `/status` | Offene Stunden gruppiert nach Auftraggeber |
-| `/monat` | Monatsübersicht aller Einträge |
-| `/export` | PDF des Monats als Dokument |
-| `✅ Senden` | E-Mail-Versand bestätigen (Inline-Button) |
-| `❌ Abbrechen` | Versand abbrechen (Inline-Button) |
-
-**Scheduler:** Täglich 9:00 Uhr Prüfung des Vormonats auf unbezahlte Einträge → Telegram-Nachricht mit Bestätigungs-Buttons. Auto-Mail-Tag (1-28) in den Mail-Einstellungen konfigurierbar.
+```bash
+go run .
+# → http://localhost:8080
+# Beim ersten Start öffnet sich das Onboarding
+```
 
 ---
 
@@ -87,6 +56,37 @@ Die Datenbank wird in `./data` persistiert, Container läuft als `appuser`.
 | `TZ` | `UTC` | Zeitzone (z.B. `Europe/Berlin`) |
 | `TELEGRAM_BOT_TOKEN` | — | Telegram Bot Token |
 | `APP_ENCRYPTION_KEY` | — | 32-Byte-Hex für SMTP-Passwort-Verschlüsselung |
+
+---
+
+## 🧭 Onboarding
+
+Beim ersten Start führt ein **5-stufiger Assistent** durch die Einrichtung:
+
+| Schritt | |
+|---|---|
+| **1. Admin-Konto** | Benutzername & Passwort festlegen. Alternativ DB-Backup importieren. |
+| **2. Persönliche Daten** | Vor- und Nachname für E-Mails und PDF-Exporte. |
+| **3. Erster Auftraggeber** | Optional anlegen oder überspringen. |
+| **4. Telegram** | Bot-Token für Benachrichtigungen (optional). |
+| **5. Abschluss** | App-Titel & Footer festlegen. Danach automatischer Login. |
+
+---
+
+## 🤖 Telegram-Bot
+
+Mit `TELEGRAM_BOT_TOKEN` wird ein Telegram-Bot gestartet:
+
+| Befehl | Beschreibung |
+|---|---|
+| `/start` | Chat-ID anzeigen & Befehlsübersicht |
+| `/status` | Offene Stunden gruppiert nach Auftraggeber |
+| `/monat` | Monatsübersicht aller Einträge |
+| `/export` | PDF des Monats als Dokument |
+| `✅ Senden` | E-Mail-Versand bestätigen (Inline-Button) |
+| `❌ Abbrechen` | Versand abbrechen (Inline-Button) |
+
+**Scheduler:** Täglich 9:00 Uhr Prüfung des Vormonats auf unbezahlte Einträge → Telegram-Nachricht mit Bestätigungs-Buttons. Auto-Mail-Tag (1-28) in den Mail-Einstellungen konfigurierbar.
 
 ---
 
