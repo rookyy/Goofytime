@@ -71,3 +71,4 @@ SMTP-Einstellungen werden pro Benutzer im Web-UI unter **Mail** konfiguriert.
 ├── docker-compose.yml
 └── stunden.db               # SQLite-DB (auto-erstellt)
 ```
+# Goofytime
