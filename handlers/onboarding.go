@@ -112,6 +112,7 @@ func OnboardingStep(w http.ResponseWriter, r *http.Request) {
 		}
 		token := r.FormValue("telegram_token")
 		if token != "" {
+			models.SaveTelegramBotToken(token)
 			models.LogActivity(1, "Onboarding", "Telegram-Token gesetzt")
 		}
 		http.Redirect(w, r, "/onboarding?step=5", http.StatusSeeOther)
@@ -121,7 +122,7 @@ func OnboardingStep(w http.ResponseWriter, r *http.Request) {
 		footer := r.FormValue("footer_text")
 		if title == "" { title = "Cold-IT Zeiterfassung" }
 		if footer == "" { footer = "Made by Cold-IT" }
-		models.SaveAdminSettings(title, footer)
+		models.SaveAdminSettings(title, footer, "")
 
 		session, _ := models.CreateSession(1)
 		http.SetCookie(w, &http.Cookie{Name: "session", Value: session.Token, Path: "/", MaxAge: 7 * 24 * 3600, HttpOnly: true, Secure: true, SameSite: http.SameSiteLaxMode})

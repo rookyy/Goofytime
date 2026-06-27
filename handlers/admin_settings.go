@@ -32,7 +32,7 @@ func AdminSettingsPage(w http.ResponseWriter, r *http.Request) {
 func SaveAdminSettings(w http.ResponseWriter, r *http.Request) {
 	headerTitle := r.FormValue("header_title")
 	footerText := r.FormValue("footer_text")
-	models.SaveAdminSettings(headerTitle, footerText)
+	models.SaveAdminSettings(headerTitle, footerText, "")
 	http.Redirect(w, r, "/admin/settings?message=Einstellungen+gespeichert", http.StatusSeeOther)
 }
 

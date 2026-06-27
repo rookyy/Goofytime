@@ -117,6 +117,16 @@ func migrate() {
 			default_mail_text TEXT NOT NULL DEFAULT '',
 			FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 		)`,
+		`CREATE TABLE IF NOT EXISTS active_timers (
+			user_id INTEGER PRIMARY KEY,
+			start_ms INTEGER NOT NULL,
+			elapsed_ms INTEGER NOT NULL DEFAULT 0,
+			is_running INTEGER NOT NULL DEFAULT 1,
+			purpose TEXT NOT NULL DEFAULT '',
+			client_id INTEGER,
+			FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+			FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE SET NULL
+		)`,
 	}
 
 	for _, q := range queries {
@@ -144,4 +154,5 @@ func migrate() {
 	DB.Exec(`ALTER TABLE clients ADD COLUMN mail_subject TEXT NOT NULL DEFAULT ''`)
 	DB.Exec(`ALTER TABLE user_settings ADD COLUMN first_name TEXT NOT NULL DEFAULT ''`)
 	DB.Exec(`ALTER TABLE user_settings ADD COLUMN last_name TEXT NOT NULL DEFAULT ''`)
+	DB.Exec(`ALTER TABLE admin_settings ADD COLUMN telegram_bot_token TEXT NOT NULL DEFAULT ''`)
 }

@@ -64,6 +64,10 @@ type TelegramResponse struct {
 }
 
 func getTelegramToken() string {
+	token := models.GetAdminSettings().TelegramBotToken
+	if token != "" {
+		return token
+	}
 	return os.Getenv("TELEGRAM_BOT_TOKEN")
 }
 

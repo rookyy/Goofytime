@@ -13,18 +13,21 @@ func SettingsPage(w http.ResponseWriter, r *http.Request) {
 
 	chatID, _ := models.GetTelegramChatID(user.ID)
 	message := r.URL.Query().Get("message")
+	adminSettings := models.GetAdminSettings()
 
 	RenderTemplate(w, "settings.html", map[string]interface{}{
-		"Title":   "Einstellungen",
-		"User":    user,
-		"ChatID":  chatID,
-		"Message": message,
+		"Title":            "Einstellungen",
+		"User":             user,
+		"ChatID":           chatID,
+		"TelegramBotToken": adminSettings.TelegramBotToken,
+		"Message":          message,
 	})
 }
 
 func SaveSettings(w http.ResponseWriter, r *http.Request) {
 	user := middleware.GetUser(r)
 	chatID := r.FormValue("chat_id")
+	telegramBotToken := r.FormValue("telegram_bot_token")
 
 	if chatID != "" {
 		if _, err := strconv.ParseInt(chatID, 10, 64); err != nil {
@@ -32,6 +35,10 @@ func SaveSettings(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		models.SetTelegramChatID(user.ID, chatID)
+	}
+
+	if telegramBotToken != "" {
+		models.SaveTelegramBotToken(telegramBotToken)
 	}
 
 	http.Redirect(w, r, "/settings?message=Einstellungen+gespeichert", http.StatusSeeOther)

@@ -46,10 +46,16 @@ func main() {
 	mux.HandleFunc("GET /entries/new", withAuth(handlers.NewEntryForm))
 	mux.HandleFunc("POST /entries", withAuth(handlers.CreateEntry))
 	mux.HandleFunc("GET /entries/{id}/edit", withAuth(handlers.EditEntryForm))
+
+	mux.HandleFunc("GET /timer/status", withAuth(handlers.GetTimerStatus))
+	mux.HandleFunc("POST /timer", withAuth(handlers.SaveTimer))
+	mux.HandleFunc("DELETE /timer", withAuth(handlers.DeleteTimer))
 	mux.HandleFunc("POST /entries/{id}/update", withAuth(handlers.UpdateEntry))
 	mux.HandleFunc("DELETE /entries/{id}", withAuth(handlers.DeleteEntry))
 	mux.HandleFunc("GET /entries/{id}/row", withAuth(handlers.HTMLEntryRow))
 	mux.HandleFunc("POST /entries/{id}/toggle-billed", withAuth(handlers.ToggleBilled))
+	mux.HandleFunc("POST /entries/bulk-toggle-billed", withAuth(handlers.BulkToggleBilled))
+	mux.HandleFunc("POST /entries/bulk-delete", withAuth(handlers.BulkDeleteEntries))
 
 	mux.HandleFunc("GET /export", withAuth(handlers.ExportPDF))
 	mux.HandleFunc("GET /send-mail", withAuth(handlers.SendMailForm))
@@ -62,6 +68,7 @@ func main() {
 
 	mux.HandleFunc("GET /profile", withAuth(handlers.ProfilePage))
 	mux.HandleFunc("POST /profile", withAuth(handlers.SaveProfile))
+	mux.HandleFunc("POST /profile/password", withAuth(handlers.ChangePassword))
 
 	mux.HandleFunc("GET /settings", withAuth(handlers.SettingsPage))
 	mux.HandleFunc("POST /settings", withAuth(handlers.SaveSettings))

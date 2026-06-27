@@ -26,6 +26,20 @@ func cleanPDF(s string) string {
 	return fallbackReplacer.Replace(encoded)
 }
 
+func cleanFilename(s string) string {
+	s = strings.Map(func(r rune) rune {
+		if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') || r == '-' {
+			return r
+		}
+		return '_'
+	}, s)
+	for strings.Contains(s, "__") {
+		s = strings.ReplaceAll(s, "__", "_")
+	}
+	s = strings.Trim(s, "_")
+	return s
+}
+
 func ExportPDF(w http.ResponseWriter, r *http.Request) {
 	user := middleware.GetUser(r)
 
@@ -269,6 +283,12 @@ func ExportPDF(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/pdf")
-	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=Arbeitsstunden_%s.pdf", time.Now().Format("2006-01")))
+	var filename string
+	if client != nil {
+		filename = fmt.Sprintf("Arbeitsstunden_%s_%s.pdf", cleanFilename(client.Name), time.Now().Format("2006-01"))
+	} else {
+		filename = fmt.Sprintf("Arbeitsstunden_%s.pdf", time.Now().Format("2006-01"))
+	}
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filename))
 	pdf.Output(w)
 }

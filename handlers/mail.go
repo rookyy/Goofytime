@@ -17,6 +17,17 @@ import (
 	"goofytime/models"
 )
 
+type MailPreview struct {
+	ClientID     int
+	ClientName   string
+	Recipients   string
+	Subject      string
+	Body         string
+	EntryCount   int
+	TotalHours   float64
+	PDFFilename  string
+}
+
 type SMTPConfig struct {
 	Host     string
 	Port     string
@@ -54,13 +65,114 @@ func SendMailForm(w http.ResponseWriter, r *http.Request) {
 	entries, _ := models.GetUnbilledEntriesForUser(user.ID)
 	cfg, _ := models.GetMailSettings(user.ID)
 
+	var previews []MailPreview
+	if len(entries) > 0 && cfg != nil && cfg.SMTPHost != "" {
+		previews = buildMailPreviews(user, entries, cfg)
+	}
+
 	RenderTemplate(w, "send_mail.html", map[string]interface{}{
 		"Title":         "E-Mail versenden",
 		"User":          user,
 		"UnbilledHours": hours,
 		"EntryCount":    len(entries),
 		"Settings":      cfg,
+		"Previews":      previews,
 	})
+}
+
+func buildMailPreviews(user *models.User, entries []models.TimeEntry, mailSettings *models.MailSettings) []MailPreview {
+	profile, _ := models.GetUserSettings(user.ID)
+	allClients, _ := models.GetClientsByUserID(user.ID)
+	now := time.Now()
+
+	clientByID := map[int]models.Client{}
+	for _, c := range allClients {
+		clientByID[c.ID] = c
+	}
+
+	entriesByClient := map[int][]models.TimeEntry{}
+	for _, e := range entries {
+		if e.ClientID != nil {
+			entriesByClient[*e.ClientID] = append(entriesByClient[*e.ClientID], e)
+		}
+	}
+
+	sig := buildSignature(profile)
+
+	var previews []MailPreview
+	for clientID, clientEntries := range entriesByClient {
+		c, ok := clientByID[clientID]
+		if !ok || c.Recipients == "" {
+			continue
+		}
+
+		clientTotal := 0.0
+		for _, e := range clientEntries {
+			clientTotal += e.Hours
+		}
+
+		body := c.MailText
+		if body == "" {
+			body = mailSettings.DefaultMailText
+		}
+		if body == "" {
+			body = "Anbei die geleisteten Arbeitsstunden."
+		}
+
+		subj := ""
+		if c.MailSubject != "" {
+			subj = formatEmailSubject(c.MailSubject, now, profile.LastName)
+		} else if mailSettings.EmailSubject != "" {
+			subj = formatEmailSubject(mailSettings.EmailSubject, now, profile.LastName)
+		}
+		if subj == "" {
+			subj = fmt.Sprintf("Arbeitsstunden %s - %.1fh", c.Name, clientTotal)
+		}
+
+		bodyWithDetails := body + fmt.Sprintf("\n\nGesamt: %.1f Stunden (%d Einträge)\n", clientTotal, len(clientEntries))
+		for _, e := range clientEntries {
+			bodyWithDetails += fmt.Sprintf("- %s: %s-%s (%.1fh) %s", e.Date, e.TimeFrom, e.TimeTo, e.Hours, e.Purpose)
+			if e.ClientName != "" {
+				bodyWithDetails += fmt.Sprintf(" [%s]", e.ClientName)
+			}
+			bodyWithDetails += "\n"
+		}
+		bodyWithDetails += sig
+
+		_, filename, _ := generatePDF(clientEntries, profile, &c, subj)
+
+		previews = append(previews, MailPreview{
+			ClientID:    clientID,
+			ClientName:  c.Name,
+			Recipients:  c.Recipients,
+			Subject:     subj,
+			Body:        bodyWithDetails,
+			EntryCount:  len(clientEntries),
+			TotalHours:  clientTotal,
+			PDFFilename: filename,
+		})
+	}
+	return previews
+}
+
+func buildSignature(profile *models.UserSettings) string {
+	sig := ""
+	if profile.DisplayName() != "" {
+		sig += fmt.Sprintf("\n\n-- \n%s", profile.DisplayName())
+		if profile.Street != "" {
+			sig += fmt.Sprintf("\n%s", profile.Street)
+		}
+		if profile.ZipCity != "" {
+			sig += fmt.Sprintf("\n%s", profile.ZipCity)
+		}
+		if profile.Phone != "" {
+			sig += fmt.Sprintf("\nTel: %s", profile.Phone)
+		}
+		if profile.Email != "" {
+			sig += fmt.Sprintf("\n%s", profile.Email)
+		}
+	}
+	return sig
 }
 
 func SendMail(w http.ResponseWriter, r *http.Request) {
@@ -85,31 +197,12 @@ func sendMailAndMarkBilled(w http.ResponseWriter, r *http.Request) {
 	mailSettings, _ := models.GetMailSettings(user.ID)
 	profile, _ := models.GetUserSettings(user.ID)
 	allClients, _ := models.GetClientsByUserID(user.ID)
-	now := time.Now()
-
-	sig := ""
-	if profile.DisplayName() != "" {
-		sig += fmt.Sprintf("\n\n-- \n%s", profile.DisplayName())
-		if profile.Street != "" {
-			sig += fmt.Sprintf("\n%s", profile.Street)
-		}
-		if profile.ZipCity != "" {
-			sig += fmt.Sprintf("\n%s", profile.ZipCity)
-		}
-		if profile.Phone != "" {
-			sig += fmt.Sprintf("\nTel: %s", profile.Phone)
-		}
-		if profile.Email != "" {
-			sig += fmt.Sprintf("\n%s", profile.Email)
-		}
-	}
 
 	clientByID := map[int]models.Client{}
 	for _, c := range allClients {
 		clientByID[c.ID] = c
 	}
 
-	// Group entries by client
 	entriesByClient := map[int][]models.TimeEntry{}
 	for _, e := range entries {
 		if e.ClientID != nil {
@@ -117,6 +210,7 @@ func sendMailAndMarkBilled(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	sig := buildSignature(profile)
 	sent := 0
 	sentHours := 0.0
 
@@ -141,9 +235,9 @@ func sendMailAndMarkBilled(w http.ResponseWriter, r *http.Request) {
 
 		subj := ""
 		if c.MailSubject != "" {
-			subj = formatEmailSubject(c.MailSubject, now, profile.LastName)
+			subj = formatEmailSubject(c.MailSubject, time.Now(), profile.LastName)
 		} else if mailSettings != nil && mailSettings.EmailSubject != "" {
-			subj = formatEmailSubject(mailSettings.EmailSubject, now, profile.LastName)
+			subj = formatEmailSubject(mailSettings.EmailSubject, time.Now(), profile.LastName)
 		}
 		if subj == "" {
 			subj = fmt.Sprintf("Arbeitsstunden %s - %.1fh", c.Name, clientTotal)
@@ -180,14 +274,20 @@ func sendMailAndMarkBilled(w http.ResponseWriter, r *http.Request) {
 			ids[i] = e.ID
 		}
 		models.MarkEntriesAsBilled(ids)
-
-		sent += len(clientEntries)
+		sent++
 		sentHours += clientTotal
 	}
 
-	models.LogActivity(user.ID, "Mail versendet", fmt.Sprintf("%d Einträge (%.1fh)", sent, sentHours))
+	if sent == 0 {
+		http.Redirect(w, r, "/send-mail?info=Keine+Empfänger+konfiguriert", http.StatusSeeOther)
+	} else {
+		models.LogActivity(user.ID, "Mail versendet", fmt.Sprintf("%d E-Mails (%s) versendet", sent, formatHoursStr(sentHours)))
+		http.Redirect(w, r, "/dashboard?message="+fmt.Sprintf("%d+E-Mails+versendet", sent), http.StatusSeeOther)
+	}
+}
 
-	http.Redirect(w, r, "/dashboard?sent=1", http.StatusSeeOther)
+func formatHoursStr(hours float64) string {
+	return fmt.Sprintf("%.1fh", hours)
 }
 
 func GetUnbilledEntriesForExport(userID int, yearMonth string) ([]TimeEntryExport, error) {
@@ -352,7 +452,12 @@ func generatePDF(entries []models.TimeEntry, profile *models.UserSettings, clien
 		return nil, "", err
 	}
 
-	filename := fmt.Sprintf("Arbeitsstunden_%s.pdf", time.Now().Format("2006-01"))
+	var filename string
+	if client != nil {
+		filename = fmt.Sprintf("Arbeitsstunden_%s_%s.pdf", cleanFilename(client.Name), time.Now().Format("2006-01"))
+	} else {
+		filename = fmt.Sprintf("Arbeitsstunden_%s.pdf", time.Now().Format("2006-01"))
+	}
 	return buf.Bytes(), filename, nil
 }
 

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"goofytime/database"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type User struct {
@@ -109,6 +110,27 @@ func GetEntryCountForUser(userID int) (int, error) {
 	var count int
 	err := database.DB.QueryRow("SELECT COUNT(*) FROM time_entries WHERE user_id = ?", userID).Scan(&count)
 	return count, err
+}
+
+func ChangePassword(userID int, oldPassword, newPassword string) error {
+	var hash string
+	err := database.DB.QueryRow("SELECT password_hash FROM users WHERE id = ?", userID).Scan(&hash)
+	if err != nil {
+		return err
+	}
+	if err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(oldPassword)); err != nil {
+		return err
+	}
+	newHash, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+	_, err = database.DB.Exec("UPDATE users SET password_hash = ? WHERE id = ?", string(newHash), userID)
+	if err != nil {
+		return err
+	}
+	DeleteUserSessions(userID)
+	return nil
 }
 
 func GetTotalHoursForUser(userID int) (float64, error) {

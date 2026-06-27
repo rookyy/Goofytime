@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -199,6 +200,10 @@ func CreateEntry(w http.ResponseWriter, r *http.Request) {
 	}
 
 	models.LogActivity(user.ID, "Eintrag erstellt", date+" "+purpose)
+
+	if r.FormValue("from_timer") == "1" {
+		models.DeleteActiveTimer(user.ID)
+	}
 
 	http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 }
@@ -421,4 +426,53 @@ func pageNumbers(current, total int) []int {
 		pages = append(pages, i)
 	}
 	return pages
+}
+
+func BulkToggleBilled(w http.ResponseWriter, r *http.Request) {
+	user := middleware.GetUser(r)
+	ids := parseIDs(r.FormValue("ids"))
+	if len(ids) == 0 {
+		http.Error(w, "Keine Einträge ausgewählt", http.StatusBadRequest)
+		return
+	}
+	for _, id := range ids {
+		entry, err := models.GetEntryByID(id)
+		if err != nil || entry.UserID != user.ID {
+			continue
+		}
+		models.ToggleBilled(id)
+	}
+	models.LogActivity(user.ID, "Bulk-Aktion", fmt.Sprintf("%d Einträge abgerechnet/offen", len(ids)))
+	w.WriteHeader(http.StatusOK)
+}
+
+func BulkDeleteEntries(w http.ResponseWriter, r *http.Request) {
+	user := middleware.GetUser(r)
+	ids := parseIDs(r.FormValue("ids"))
+	if len(ids) == 0 {
+		http.Error(w, "Keine Einträge ausgewählt", http.StatusBadRequest)
+		return
+	}
+	count := 0
+	for _, id := range ids {
+		entry, err := models.GetEntryByID(id)
+		if err != nil || entry.UserID != user.ID {
+			continue
+		}
+		models.DeleteEntry(id)
+		count++
+	}
+	models.LogActivity(user.ID, "Bulk-Löschung", fmt.Sprintf("%d Einträge gelöscht", count))
+	w.WriteHeader(http.StatusOK)
+}
+
+func parseIDs(raw string) []int {
+	var ids []int
+	for _, part := range strings.Split(raw, ",") {
+		part = strings.TrimSpace(part)
+		if id, err := strconv.Atoi(part); err == nil && id > 0 {
+			ids = append(ids, id)
+		}
+	}
+	return ids
 }

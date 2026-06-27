@@ -46,6 +46,10 @@ func DeleteSession(token string) {
 	database.DB.Exec("DELETE FROM sessions WHERE token = ?", token)
 }
 
+func DeleteUserSessions(userID int) {
+	database.DB.Exec("DELETE FROM sessions WHERE user_id = ?", userID)
+}
+
 func CleanupSessions() {
 	database.DB.Exec("DELETE FROM sessions WHERE expires_at < ?", time.Now())
 }

@@ -1,12 +1,15 @@
 {{define "entry_row"}}
 <tr id="entry-{{.Entry.ID}}" class="hover:bg-gray-50 transition fade-in {{if .Entry.Billed}}opacity-60{{end}}">
-    <td class="px-6 py-3 text-sm text-gray-900 whitespace-nowrap">{{.Entry.Date}}</td>
-    <td class="px-6 py-3 text-sm text-gray-600 whitespace-nowrap">{{.Entry.TimeFrom}}</td>
-    <td class="px-6 py-3 text-sm text-gray-600 whitespace-nowrap">{{.Entry.TimeTo}}</td>
-    <td class="px-6 py-3 text-sm font-medium text-gray-900 whitespace-nowrap">{{formatHours .Entry.Hours}}</td>
-    <td class="px-6 py-3 text-sm text-gray-600 max-w-xs truncate" title="{{.Entry.Purpose}}">{{.Entry.Purpose}}</td>
-    <td class="px-6 py-3 text-sm text-gray-500 whitespace-nowrap">{{.Entry.ClientName}}</td>
-    <td class="px-6 py-3 text-right whitespace-nowrap">
+    <td class="px-2 py-3 w-8">
+        <input type="checkbox" class="entry-checkbox rounded border-gray-300 text-primaryLight focus:ring-primaryLight" value="{{.Entry.ID}}" onchange="updateBulkBar()">
+    </td>
+    <td class="px-2 py-3 text-sm text-gray-900 whitespace-nowrap">{{.Entry.Date}}</td>
+    <td class="px-2 py-3 text-sm text-gray-600 whitespace-nowrap">{{.Entry.TimeFrom}}</td>
+    <td class="px-2 py-3 text-sm text-gray-600 whitespace-nowrap">{{.Entry.TimeTo}}</td>
+    <td class="px-2 py-3 text-sm font-medium text-gray-900 whitespace-nowrap">{{formatHours .Entry.Hours}}</td>
+    <td class="px-2 py-3 text-sm text-gray-600 max-w-xs truncate" title="{{.Entry.Purpose}}">{{.Entry.Purpose}}</td>
+    <td class="px-2 py-3 text-sm text-gray-500 whitespace-nowrap">{{.Entry.ClientName}}</td>
+    <td class="px-2 py-3 text-right whitespace-nowrap">
         <div class="flex items-center justify-end space-x-1">
             <button hx-post="/entries/{{.Entry.ID}}/toggle-billed"
                 hx-target="#entry-{{.Entry.ID}}"

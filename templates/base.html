@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{.Title}} - Goofytime</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%233b82f6'/%3E%3Ccircle cx='50' cy='50' r='38' fill='white'/%3E%3Cline x1='50' y1='50' x2='50' y2='25' stroke='%233b82f6' stroke-width='5' stroke-linecap='round'/%3E%3Cline x1='50' y1='50' x2='65' y2='50' stroke='%233b82f6' stroke-width='5' stroke-linecap='round'/%3E%3Ccircle cx='50' cy='50' r='4' fill='%233b82f6'/%3E%3C/svg%3E">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/htmx.org@2.0.4"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js"></script>
@@ -103,6 +104,12 @@
 <footer class="border-t border-gray-200 bg-white mt-12">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <p class="text-center text-sm text-gray-400">{{footerText}}</p>
+        <div class="text-center mt-2">
+            <a href="https://github.com/rookyy/Goofytime" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-600 transition">
+                <i class="fab fa-github text-lg"></i>
+                <span>Goofytime on GitHub</span>
+            </a>
+        </div>
     </div>
 </footer>
 
@@ -270,11 +277,12 @@ function openExportModal() {
         setTimeout(function() { toast.remove(); }, 3000);
     });
 
-    // --- Stopwatch tracking (persisted via localStorage) ---
+    // --- Stopwatch tracking (server + localStorage) ---
     var trackingRunning = false;
     var trackingTimer = null;
     var trackingStart = null;
     var trackingElapsed = 0;
+    var syncInterval = null;
 
     function pad(n) { return n < 10 ? '0' + n : '' + n; }
 
@@ -289,7 +297,61 @@ function openExportModal() {
         localStorage.setItem('tracking', JSON.stringify(data));
     }
 
+    function syncToServer() {
+        var startMs = trackingStart || 0;
+        var elapsedMs = trackingElapsed;
+        if (!trackingRunning) elapsedMs = trackingElapsed;
+        var body = 'start_ms=' + startMs +
+            '&elapsed_ms=' + elapsedMs +
+            '&is_running=' + trackingRunning +
+            '&purpose=' + encodeURIComponent(document.getElementById('tracking-purpose')?.value || '') +
+            '&client_id=' + encodeURIComponent(document.getElementById('tracking-client')?.value || '');
+        fetch('/timer', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRF-Token': getCSRFToken()
+            },
+            body: body
+        });
+    }
+
     function loadTracking() {
+        var restored = false;
+        // Try server first
+        fetch('/timer/status')
+            .then(function(r) {
+                if (!r.ok) throw new Error('no timer');
+                return r.json();
+            })
+            .then(function(t) {
+                if (!t) throw new Error('no timer');
+                restored = true;
+                if (t.is_running) {
+                    trackingElapsed = t.elapsed_ms + (Date.now() - t.start_ms);
+                    trackingRunning = true;
+                    trackingStart = Date.now();
+                } else {
+                    trackingElapsed = t.elapsed_ms;
+                    trackingRunning = false;
+                    trackingStart = null;
+                }
+                document.getElementById('tracking-purpose').value = t.purpose || '';
+                loadClientDropdown(t.client_id ? String(t.client_id) : '');
+                showTrackingBar();
+                if (trackingTimer) clearInterval(trackingTimer);
+                trackingTimer = setInterval(function() { updateTimerDisplay(); saveTracking(); }, 200);
+                updateTimerDisplay();
+                startSync();
+            })
+            .catch(function() {
+                // Fallback to localStorage
+                if (!restored) loadFromLocalStorage();
+            });
+        return true; // async, always returns true to prevent double init
+    }
+
+    function loadFromLocalStorage() {
         var raw = localStorage.getItem('tracking');
         if (!raw) return false;
         try {
@@ -305,6 +367,11 @@ function openExportModal() {
             }
             document.getElementById('tracking-purpose').value = d.purpose || '';
             loadClientDropdown(d.client);
+            showTrackingBar();
+            if (trackingTimer) clearInterval(trackingTimer);
+            trackingTimer = setInterval(function() { updateTimerDisplay(); saveTracking(); }, 200);
+            updateTimerDisplay();
+            startSync();
             return true;
         } catch(e) {
             return false;
@@ -314,13 +381,12 @@ function openExportModal() {
     function loadClientDropdown(selectedVal) {
         var sel = document.getElementById('tracking-client');
         if (!sel) return;
-        // Try to copy options from the dashboard modal
         var src = document.querySelector('#newEntryModal select[name=client_id]');
         if (src) {
             sel.innerHTML = src.innerHTML;
         }
         if (selectedVal) sel.value = selectedVal;
-        sel.onchange = function() { saveTracking(); };
+        sel.onchange = function() { saveTracking(); syncToServer(); };
         document.getElementById('tracking-purpose').oninput = function() { saveTracking(); };
     }
 
@@ -365,9 +431,11 @@ function openExportModal() {
         document.getElementById('tracking-client').value = '';
         showTrackingBar();
         saveTracking();
+        syncToServer();
         if (trackingTimer) clearInterval(trackingTimer);
         trackingTimer = setInterval(function() { updateTimerDisplay(); saveTracking(); }, 200);
         updateTimerDisplay();
+        startSync();
     }
 
     function togglePause() {
@@ -381,6 +449,7 @@ function openExportModal() {
         }
         updateStatusDisplay();
         saveTracking();
+        syncToServer();
     }
 
     function cancelTracking() {
@@ -389,16 +458,28 @@ function openExportModal() {
             if (!confirm('Zeiterfassung wirklich abbrechen? Die erfasste Zeit geht verloren.')) return;
         }
         resetTracking();
+        fetch('/timer', {
+            method: 'DELETE',
+            headers: { 'X-CSRF-Token': getCSRFToken() }
+        });
     }
 
     function resetTracking() {
         if (trackingTimer) clearInterval(trackingTimer);
+        if (syncInterval) clearInterval(syncInterval);
         trackingStart = null;
         trackingElapsed = 0;
         trackingRunning = false;
         localStorage.removeItem('tracking');
         document.getElementById('tracking-bar').classList.add('hidden');
         if (window._baseTitle) { document.title = window._baseTitle; }
+    }
+
+    function startSync() {
+        if (syncInterval) clearInterval(syncInterval);
+        syncInterval = setInterval(function() {
+            if (trackingRunning) syncToServer();
+        }, 5000);
     }
 
     function finishTracking() {
@@ -428,7 +509,8 @@ function openExportModal() {
             '&time_to=' + encodeURIComponent(timeTo) +
             '&hours=' + hours +
             '&purpose=' + encodeURIComponent(purpose) +
-            '&client_id=' + encodeURIComponent(clientID);
+            '&client_id=' + encodeURIComponent(clientID) +
+            '&from_timer=1';
 
         resetTracking();
 
@@ -445,14 +527,9 @@ function openExportModal() {
         });
     }
 
-    // Init on page load
+    // Init on page load — server first, localStorage fallback
     document.addEventListener('DOMContentLoaded', function() {
-        if (loadTracking()) {
-            showTrackingBar();
-            if (trackingTimer) clearInterval(trackingTimer);
-            trackingTimer = setInterval(function() { updateTimerDisplay(); saveTracking(); }, 200);
-            updateTimerDisplay();
-        }
+        loadTracking();
     });
 </script>
 </body>

@@ -181,6 +181,15 @@ func MarkEntriesAsBilled(ids []int) error {
 	return nil
 }
 
+func DeleteEntries(ids []int) error {
+	for _, id := range ids {
+		if _, err := database.DB.Exec("DELETE FROM time_entries WHERE id = ?", id); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func GetUnbilledEntriesByMonth(userID int, yearMonth string) ([]TimeEntry, error) {
 	rows, err := database.DB.Query(
 		"SELECT e.id, e.user_id, e.client_id, COALESCE(c.name, ''), e.date, e.time_from, e.time_to, e.hours, e.purpose, e.location, e.billed, e.created_at FROM time_entries e LEFT JOIN clients c ON e.client_id = c.id WHERE e.user_id = ? AND e.billed = 0 AND e.date LIKE ? ORDER BY e.date ASC, e.time_from ASC",

@@ -92,6 +92,48 @@
                     if (newBody) document.getElementById('entries-list').innerHTML = newBody.innerHTML;
                 });
         });
+
+        // --- Bulk actions ---
+        function getSelectedIDs() {
+            var ids = [];
+            document.querySelectorAll('.entry-checkbox:checked').forEach(function(cb) { ids.push(cb.value); });
+            return ids;
+        }
+        function updateBulkBar() {
+            var count = getSelectedIDs().length;
+            var bar = document.getElementById('bulk-bar');
+            var selAll = document.getElementById('select-all');
+            if (count > 0) {
+                bar.classList.remove('hidden');
+                document.getElementById('bulk-count').textContent = count + ' ausgewählt';
+            } else {
+                bar.classList.add('hidden');
+                selAll.checked = false;
+            }
+        }
+        function toggleSelectAll(el) {
+            document.querySelectorAll('.entry-checkbox').forEach(function(cb) { cb.checked = el.checked; });
+            updateBulkBar();
+        }
+        function bulkToggleBilled() {
+            var ids = getSelectedIDs();
+            if (ids.length === 0) return;
+            fetch('/entries/bulk-toggle-billed', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRF-Token': getCSRFToken() },
+                body: 'ids=' + ids.join(',')
+            }).then(function() { location.reload(); });
+        }
+        function bulkDelete() {
+            var ids = getSelectedIDs();
+            if (ids.length === 0) return;
+            if (!confirm(ids.length + ' Einträge wirklich löschen?')) return;
+            fetch('/entries/bulk-delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRF-Token': getCSRFToken() },
+                body: 'ids=' + ids.join(',')
+            }).then(function() { location.reload(); });
+        }
     </script>
 
     {{template "foot"}}
@@ -103,20 +145,32 @@
 
     {{define "entries_area"}}
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-200">
+        <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
             <h2 class="text-lg font-semibold text-gray-900">Zeiteinträge</h2>
+            <div id="bulk-bar" class="hidden items-center gap-2">
+                <span id="bulk-count" class="text-sm text-gray-500"></span>
+                <button onclick="bulkToggleBilled()"
+                    class="px-3 py-1.5 text-xs font-medium text-green-700 bg-green-100 hover:bg-green-200 rounded-lg transition">
+                    <i class="fas fa-check-double mr-1"></i> Abrechnen
+                </button>
+                <button onclick="bulkDelete()"
+                    class="px-3 py-1.5 text-xs font-medium text-red-700 bg-red-100 hover:bg-red-200 rounded-lg transition">
+                    <i class="fas fa-trash mr-1"></i> Löschen
+                </button>
+            </div>
         </div>
         <div id="entries-list">
             <table class="w-full">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Datum</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Von</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bis</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stunden</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Beschreibung</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Auftraggeber</th>
-                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Aktion</th>
+                        <th class="px-2 py-3 w-8"><input type="checkbox" id="select-all" class="rounded border-gray-300 text-primaryLight focus:ring-primaryLight" onchange="toggleSelectAll(this)" title="Alle auswählen"></th>
+                        <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Datum</th>
+                        <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Von</th>
+                        <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bis</th>
+                        <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stunden</th>
+                        <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Beschreibung</th>
+                        <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Auftraggeber</th>
+                        <th class="px-2 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Aktion</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200">
@@ -125,7 +179,7 @@
                     {{template "entry_row" dict "Entry" .}}
                     {{end}}
                     {{else}}
-                    <tr><td colspan="7" class="px-6 py-12 text-center text-gray-400"><i class="fas fa-inbox text-3xl mb-3 block"></i><p class="text-sm">Keine Einträge vorhanden</p></td></tr>
+                    <tr><td colspan="8" class="px-6 py-12 text-center text-gray-400"><i class="fas fa-inbox text-3xl mb-3 block"></i><p class="text-sm">Keine Einträge vorhanden</p></td></tr>
                     {{end}}
                 </tbody>
             </table>
