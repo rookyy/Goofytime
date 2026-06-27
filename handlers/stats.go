@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"sort"
+	"strconv"
 	"time"
 
 	"goofytime/middleware"
@@ -32,15 +33,40 @@ type MonthlyStats struct {
 func StatsPage(w http.ResponseWriter, r *http.Request) {
 	user := middleware.GetUser(r)
 
+	rangeParam := r.URL.Query().Get("range")
 	fromStr := r.URL.Query().Get("from")
 	toStr := r.URL.Query().Get("to")
+	clientFilter := r.URL.Query().Get("client")
+
 	var fromDate, toDate time.Time
-	if fromStr != "" {
-		fromDate, _ = time.Parse("2006-01-02", fromStr)
+	now := time.Now()
+
+	switch rangeParam {
+	case "1m":
+		fromDate = time.Date(now.Year(), now.Month()-1, 1, 0, 0, 0, 0, now.Location())
+		toDate = time.Date(now.Year(), now.Month(), 0, 23, 59, 59, 999999999, now.Location())
+	case "3m":
+		fromDate = time.Date(now.Year(), now.Month()-3, 1, 0, 0, 0, 0, now.Location())
+		toDate = time.Date(now.Year(), now.Month(), 0, 23, 59, 59, 999999999, now.Location())
+	case "6m":
+		fromDate = time.Date(now.Year(), now.Month()-6, 1, 0, 0, 0, 0, now.Location())
+		toDate = time.Date(now.Year(), now.Month(), 0, 23, 59, 59, 999999999, now.Location())
+	case "1y":
+		fromDate = now.AddDate(-1, 0, 0)
+		toDate = now
+	case "custom":
+		if fromStr != "" {
+			fromDate, _ = time.Parse("2006-01-02", fromStr)
+		}
+		if toStr != "" {
+			toDate, _ = time.Parse("2006-01-02", toStr)
+			toDate = toDate.Add(24*time.Hour - time.Second)
+		}
 	}
-	if toStr != "" {
-		toDate, _ = time.Parse("2006-01-02", toStr)
-		toDate = toDate.Add(24*time.Hour - time.Second)
+
+	var selectedClient int
+	if clientFilter != "" {
+		selectedClient, _ = strconv.Atoi(clientFilter)
 	}
 
 	clients, _ := models.GetClientsByUserID(user.ID)
@@ -49,10 +75,14 @@ func StatsPage(w http.ResponseWriter, r *http.Request) {
 	var filtered []models.TimeEntry
 	for _, e := range entries.Entries {
 		entryDate, _ := time.Parse("2006-01-02", e.Date)
+
 		if !fromDate.IsZero() && entryDate.Before(fromDate) {
 			continue
 		}
 		if !toDate.IsZero() && entryDate.After(toDate) {
+			continue
+		}
+		if selectedClient > 0 && (e.ClientID == nil || *e.ClientID != selectedClient) {
 			continue
 		}
 		filtered = append(filtered, e)
@@ -113,11 +143,6 @@ func StatsPage(w http.ResponseWriter, r *http.Request) {
 
 	monthlyStats := buildMonthlyStats(filtered, clients)
 
-	filterDesc := "Gesamt"
-	if fromStr != "" || toStr != "" {
-		filterDesc = fmt.Sprintf("%s – %s", fromStr, toStr)
-	}
-
 	RenderTemplate(w, "stats.html", map[string]interface{}{
 		"Title":               "Statistiken",
 		"User":                user,
@@ -130,9 +155,12 @@ func StatsPage(w http.ResponseWriter, r *http.Request) {
 		"NoClientHours":       noClientHours,
 		"NoClientBilled":      noClientBilled,
 		"NoClientUnbilled":    noClientUnbilled,
+		"Range":               rangeParam,
 		"From":                fromStr,
 		"To":                  toStr,
-		"FilterDesc":          filterDesc,
+		"SelectedClient":      selectedClient,
+		"Clients":             clients,
+		"EntryCount":          len(filtered),
 		"MonthlyStats":        monthlyStats,
 	})
 }

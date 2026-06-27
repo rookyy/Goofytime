@@ -25,16 +25,32 @@ func ClientsPage(w http.ResponseWriter, r *http.Request) {
 
 func CreateClient(w http.ResponseWriter, r *http.Request) {
 	user := middleware.GetUser(r)
-	name := r.FormValue("name")
-	email := r.FormValue("email")
-	address := r.FormValue("address")
+
+	name := validateLength(r.FormValue("name"), 200)
+	email := validateLength(r.FormValue("email"), 200)
+	address := validateLength(r.FormValue("address"), 500)
+	recipients := validateLength(r.FormValue("recipients"), 500)
+	mailText := validateLength(r.FormValue("mail_text"), 2000)
+	hourlyRateStr := r.FormValue("hourly_rate")
+	contactName := validateLength(r.FormValue("contact_name"), 200)
+	contactPhone := validateLength(r.FormValue("contact_phone"), 200)
+	contactEmail := validateLength(r.FormValue("contact_email"), 200)
+	autoMailEnabled := r.FormValue("auto_mail_enabled") == "on"
+	mailSubject := r.FormValue("mail_subject")
 
 	if name == "" {
 		http.Redirect(w, r, "/clients?error=Name+ist+erforderlich", http.StatusSeeOther)
 		return
 	}
 
-	_, err := models.CreateClient(user.ID, name, email, address)
+	hourlyRate := 0.0
+	if hourlyRateStr != "" {
+		if r, err := strconv.ParseFloat(strings.Replace(hourlyRateStr, ",", ".", 1), 64); err == nil {
+			hourlyRate = r
+		}
+	}
+
+	_, err := models.CreateClient(user.ID, name, email, address, recipients, mailText, hourlyRate, contactName, contactPhone, contactEmail, autoMailEnabled, mailSubject)
 	if err != nil {
 		http.Redirect(w, r, "/clients?error=Fehler+beim+Erstellen", http.StatusSeeOther)
 		return
@@ -258,31 +274,4 @@ func SendClientMail(w http.ResponseWriter, r *http.Request) {
 
 	models.LogActivity(user.ID, "Mail versendet", fmt.Sprintf("%s: %d Einträge (%.1fh)", client.Name, len(clientEntries), totalHours))
 	http.Redirect(w, r, "/clients?sent=1", http.StatusSeeOther)
-}
-
-func QuickCreateClient(w http.ResponseWriter, r *http.Request) {
-	user := middleware.GetUser(r)
-	name := r.FormValue("name")
-
-	if name == "" {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	client, err := models.CreateClient(user.ID, name, "", "")
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	models.LogActivity(user.ID, "Auftraggeber erstellt", name)
-
-	clients, _ := models.GetClientsByUserID(user.ID)
-	RenderTemplate(w, "entry_form_inner", map[string]interface{}{
-		"Title":            "Neuer Eintrag",
-		"Entry":            nil,
-		"Clients":          clients,
-		"SelectedClientID": client.ID,
-		"Today":            "",
-		"Errors":           map[string]string{},
-	})
 }

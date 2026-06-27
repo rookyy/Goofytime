@@ -181,15 +181,6 @@ func MarkEntriesAsBilled(ids []int) error {
 	return nil
 }
 
-func DeleteEntries(ids []int) error {
-	for _, id := range ids {
-		if _, err := database.DB.Exec("DELETE FROM time_entries WHERE id = ?", id); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 func GetUnbilledEntriesByMonth(userID int, yearMonth string) ([]TimeEntry, error) {
 	rows, err := database.DB.Query(
 		"SELECT e.id, e.user_id, e.client_id, COALESCE(c.name, ''), e.date, e.time_from, e.time_to, e.hours, e.purpose, e.location, e.billed, e.created_at FROM time_entries e LEFT JOIN clients c ON e.client_id = c.id WHERE e.user_id = ? AND e.billed = 0 AND e.date LIKE ? ORDER BY e.date ASC, e.time_from ASC",
@@ -218,25 +209,4 @@ func GetMonthlyHoursForUser(userID int, yearMonth string) (float64, error) {
 		userID, yearMonth+"%",
 	).Scan(&total)
 	return total, err
-}
-
-func GetAvailableMonths(userID int) ([]string, error) {
-	rows, err := database.DB.Query(
-		"SELECT DISTINCT substr(date, 1, 7) AS month FROM time_entries WHERE user_id = ? ORDER BY month DESC",
-		userID,
-	)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var months []string
-	for rows.Next() {
-		var m string
-		if err := rows.Scan(&m); err != nil {
-			return nil, err
-		}
-		months = append(months, m)
-	}
-	return months, nil
 }

@@ -63,21 +63,3 @@ func SaveProfile(userID int, firstName, lastName, street, zipCity, phone, email 
 	)
 	return err
 }
-
-func GetAllUserSettings() ([]UserSettings, error) {
-	rows, err := database.DB.Query("SELECT user_id, COALESCE(first_name,''), COALESCE(last_name,''), COALESCE(street,''), COALESCE(zip_city,''), COALESCE(phone,''), COALESCE(email,''), auto_mail_day, page_size FROM user_settings")
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var settings []UserSettings
-	for rows.Next() {
-		var s UserSettings
-		if err := rows.Scan(&s.UserID, &s.FirstName, &s.LastName, &s.Street, &s.ZipCity, &s.Phone, &s.Email, &s.AutoMailDay, &s.PageSize); err != nil {
-			return nil, err
-		}
-		settings = append(settings, s)
-	}
-	return settings, nil
-}

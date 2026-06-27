@@ -43,16 +43,6 @@ func GetAllTelegramTokens() ([]TelegramToken, error) {
 	return tokens, nil
 }
 
-func GetLastCheckMonth() string {
-	var month string
-	database.DB.QueryRow("SELECT last_check_month FROM scheduler_state WHERE id = 1").Scan(&month)
-	return month
-}
-
-func SetLastCheckMonth(month string) {
-	database.DB.Exec("INSERT OR REPLACE INTO scheduler_state (id, last_check_month) VALUES (1, ?)", month)
-}
-
 func GetLastCheckMonthForUser(userID int) string {
 	var month string
 	database.DB.QueryRow("SELECT last_check_month FROM scheduler_state WHERE id = ?", userID+100000).Scan(&month)

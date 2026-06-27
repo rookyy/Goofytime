@@ -191,7 +191,7 @@ func ImportCSV(w http.ResponseWriter, r *http.Request) {
 			}
 			// Auto-create client if not found
 			if clientID == nil {
-				created, err := models.CreateClient(user.ID, clientName, "", "")
+				created, err := models.CreateClient(user.ID, clientName, "", "", "", "", 0, "", "", "", false, "")
 				if err == nil {
 					clientID = &created.ID
 				}

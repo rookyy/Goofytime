@@ -121,3 +121,9 @@ SMTP wird pro Benutzer im Web-UI unter **Mail** eingerichtet (nicht via Umgebung
 ├── docker-compose.yml
 └── goofytime.db             # SQLite-DB (auto-erstellt)
 ```
+
+---
+
+## 🔗 Links
+
+- [GitHub Repository](https://github.com/rookyy/Goofytime)

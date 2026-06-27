@@ -54,10 +54,12 @@ func GetClientByID(id int) (*Client, error) {
 	return c, nil
 }
 
-func CreateClient(userID int, name, email, address string) (*Client, error) {
+func CreateClient(userID int, name, email, address, recipients, mailText string, hourlyRate float64, contactName, contactPhone, contactEmail string, autoMailEnabled bool, mailSubject string) (*Client, error) {
+	autoMail := 0
+	if autoMailEnabled { autoMail = 1 }
 	result, err := database.DB.Exec(
-		"INSERT INTO clients (user_id, name, email, address) VALUES (?, ?, ?, ?)",
-		userID, name, email, address,
+		"INSERT INTO clients (user_id, name, email, address, recipients, mail_text, hourly_rate, contact_name, contact_phone, contact_email, auto_mail_enabled, mail_subject) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+		userID, name, email, address, recipients, mailText, hourlyRate, contactName, contactPhone, contactEmail, autoMail, mailSubject,
 	)
 	if err != nil {
 		return nil, err

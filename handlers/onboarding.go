@@ -101,7 +101,7 @@ func OnboardingStep(w http.ResponseWriter, r *http.Request) {
 		name := r.FormValue("name")
 		email := r.FormValue("email")
 		if name != "" {
-			models.CreateClient(1, name, email, "")
+			models.CreateClient(1, name, email, "", "", "", 0, "", "", "", false, "")
 		}
 		http.Redirect(w, r, "/onboarding?step=4", http.StatusSeeOther)
 

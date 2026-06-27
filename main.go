@@ -81,7 +81,6 @@ func main() {
 	mux.HandleFunc("GET /clients/{id}/edit", withAuth(handlers.EditClientForm))
 	mux.HandleFunc("POST /clients/{id}/update", withAuth(handlers.UpdateClient))
 	mux.HandleFunc("DELETE /clients/{id}", withAuth(handlers.DeleteClient))
-	mux.HandleFunc("POST /clients/quick", withAuth(handlers.QuickCreateClient))
 	mux.HandleFunc("GET /clients/{id}/preview-mail", withAuth(handlers.PreviewClientMail))
 	mux.HandleFunc("POST /clients/{id}/send-mail", withAuth(handlers.SendClientMail))
 
