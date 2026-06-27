@@ -18,14 +18,16 @@
 
 | Bereich | Details |
 |---|---|
-| **Zeiterfassung** | Start/Stop-Uhr mit Pause, Auftraggeber-Zuordnung, Beschreibung |
-| **Dashboard** | Globaler Filter (Zeitraum, Auftraggeber), Paginierung, Einträge pro Seite |
+| **Zeiterfassung** | Start/Stop-Uhr mit Pause, Auftraggeber-Zuordnung, Beschreibung – server-seitig persistiert |
+| **Dashboard** | Globaler Filter (Zeitraum, Auftraggeber), Paginierung, Einträge pro Seite, Bulk-Aktionen (Mehrfachauswahl, Sammel-Abrechnen/Löschen) |
 | **Auftraggeber** | Name, Adresse, Kontaktdaten, Empfänger, Mailtext & Betreff, Stundenlohn, Auto-Mail |
-| **PDF-Export** | Flexibler Zeitraum-, Status- und Auftraggeber-Filter |
-| **Mail-Versand** | SMTP, PDF-Anhang, Testmail, pro Auftraggeber mit eigenen Texten/Betreff |
-| **Telegram-Bot** | Commands, monatliche Abrechnung mit Bestätigung, Scheduler |
-| **Statistiken** | Stunden & Vergütung pro Auftraggeber |
+| **PDF-Export** | Flexibler Zeitraum-, Status- und Auftraggeber-Filter, Auftraggeber-Name im Dateinamen |
+| **Mail-Versand** | SMTP, PDF-Anhang, Testmail, pro Auftraggeber mit eigenen Texten/Betreff, Vorschau vor dem Senden |
+| **Telegram-Bot** | Commands, monatliche Abrechnung mit Bestätigung, Scheduler, Token in Einstellungen hinterlegbar |
+| **Statistiken** | Stunden & Vergütung pro Auftraggeber, Datumsfilter, Monatsübersicht, visuelle Verteilungsbalken |
 | **Aktivitätslog** | Chronik aller Aktionen mit Filter |
+| **CSV-Import/Export** | Import mit Header-Erkennung (deutsch & englisch), automatische Auftraggeber-Erstellung |
+| **Passwort ändern** | Nutzer können eigenes Passwort im Profil selbst ändern |
 | **Multi-User** | Admin verwaltet Benutzer, jeder hat eigene Daten |
 | **Betreff-Platzhalter** | `%M` = Monat, `%J` = Jahr, `%N` = Nachname aus Profil |
 
@@ -50,12 +52,12 @@ docker compose up -d
 Die Datenbank wird in `./data` persistiert, Container läuft als `appuser`.
 
 | Variable | Standard | Beschreibung |
-|---|---|---|
+|---|---|---|---|
 | `PORT` | `8080` | HTTP-Port |
 | `DB_PATH` | `/app/data/goofytime.db` | Pfad zur SQLite-DB |
 | `TZ` | `UTC` | Zeitzone (z.B. `Europe/Berlin`) |
-| `TELEGRAM_BOT_TOKEN` | — | Telegram Bot Token |
-| `APP_ENCRYPTION_KEY` | — | 32-Byte-Hex für SMTP-Passwort-Verschlüsselung |
+| `TELEGRAM_BOT_TOKEN` | — | Telegram Bot Token (auch via Web-UI) |
+| `APP_ENCRYPTION_KEY` | — | 32-Byte-Hex für Passwort-Verschlüsselung in der DB |
 
 ---
 
@@ -75,7 +77,7 @@ Beim ersten Start führt ein **5-stufiger Assistent** durch die Einrichtung:
 
 ## 🤖 Telegram-Bot
 
-Mit `TELEGRAM_BOT_TOKEN` wird ein Telegram-Bot gestartet:
+Der Bot-Token kann entweder als Umgebungsvariable `TELEGRAM_BOT_TOKEN` oder direkt im Web-UI unter **Einstellungen** hinterlegt werden (DB hat Vorrang vor Env).
 
 | Befehl | Beschreibung |
 |---|---|
@@ -98,11 +100,11 @@ Mit `TELEGRAM_BOT_TOKEN` wird ein Telegram-Bot gestartet:
 |---|---|---|
 | `PORT` | `8080` | HTTP-Port |
 | `DB_PATH` | `goofytime.db` | Pfad zur SQLite-Datenbank |
-| `TELEGRAM_BOT_TOKEN` | — | Telegram Bot Token |
-| `APP_ENCRYPTION_KEY` | — | 32-Byte-Hex für SMTP-Passwort-Verschlüsselung |
+| `TELEGRAM_BOT_TOKEN` | — | Telegram Bot Token (auch via Web-UI unter Einstellungen) |
+| `APP_ENCRYPTION_KEY` | — | 32-Byte-Hex für SMTP-Passwort- und Telegram-Token-Verschlüsselung |
 
 SMTP wird pro Benutzer im Web-UI unter **Mail** eingerichtet (nicht via Umgebungsvariablen).  
-`APP_ENCRYPTION_KEY` verschlüsselt SMTP-Passwörter in der DB (AES-256-GCM). Ohne Key → Klartext.
+`APP_ENCRYPTION_KEY` verschlüsselt SMTP-Passwörter und Telegram-Token in der DB (AES-256-GCM). Ohne Key → Klartext.
 
 ---
 
